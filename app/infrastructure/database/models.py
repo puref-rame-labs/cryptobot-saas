@@ -1,10 +1,12 @@
 from datetime import datetime
 
+from sqlalchemy import ForeignKey
 from sqlalchemy import BigInteger, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database.base import Base
-
+from decimal import Decimal
+from sqlalchemy import Boolean, Numeric
 
 class User(Base):
     __tablename__ = "users"
@@ -30,9 +32,6 @@ class User(Base):
     )
 
 
-from decimal import Decimal
-
-from sqlalchemy import Boolean, Numeric
 
 class Product(Base):
     __tablename__ = "products"
@@ -70,4 +69,51 @@ class Product(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
+    )
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id"),
+        nullable=False,
+    )
+
+    amount: Mapped[Decimal] = mapped_column(
+        Numeric(18, 8),
+        nullable=False,
+    )
+
+    currency: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="PENDING",
+    )
+
+    tx_hash: Mapped[str | None] = mapped_column(
+        String(256),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
     )
