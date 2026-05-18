@@ -1,14 +1,30 @@
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import ForeignKey
-from sqlalchemy import BigInteger, String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    ForeignKey,
+    BigInteger,
+    String,
+    DateTime,
+    Boolean,
+    Numeric,
+)
+
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from app.infrastructure.database.base import Base
-from decimal import Decimal
-from sqlalchemy import Boolean, Numeric
+
+from app.domain.invoice_status import (
+    InvoiceStatus,
+)
+
 
 class User(Base):
+
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(
@@ -31,9 +47,13 @@ class User(Base):
         default=datetime.utcnow,
     )
 
+    invoices: Mapped[list["Invoice"]] = relationship(
+        back_populates="user"
+    )
 
 
 class Product(Base):
+
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(
@@ -70,7 +90,24 @@ class Product(Base):
         DateTime,
         default=datetime.utcnow,
     )
+
+    telegram_file_id: Mapped[str | None] = mapped_column(
+        String(512),
+        nullable=True,
+    )
+
+    file_type: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+
+    invoices: Mapped[list["Invoice"]] = relationship(
+        back_populates="product"
+    )
+
+
 class Invoice(Base):
+
     __tablename__ = "invoices"
 
     id: Mapped[int] = mapped_column(
@@ -100,7 +137,7 @@ class Invoice(Base):
     status: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
-        default="PENDING",
+        default=InvoiceStatus.PENDING,
     )
 
     tx_hash: Mapped[str | None] = mapped_column(
@@ -116,4 +153,12 @@ class Invoice(Base):
     expires_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
+    )
+
+    user: Mapped["User"] = relationship(
+        back_populates="invoices"
+    )
+
+    product: Mapped["Product"] = relationship(
+        back_populates="invoices"
     )

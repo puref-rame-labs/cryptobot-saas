@@ -4,6 +4,10 @@ from app.infrastructure.database.models import (
     Invoice,
 )
 
+from app.domain.invoice_status import (
+    InvoiceStatus,
+)
+
 
 class InvoiceService:
 
@@ -25,6 +29,7 @@ class InvoiceService:
             product_id=product.id,
             amount=product.price,
             currency=product.currency,
+            status=InvoiceStatus.PENDING,
             expires_at=expires_at,
         )
 
@@ -33,3 +38,30 @@ class InvoiceService:
         )
 
         return invoice
+
+    async def mark_paid(
+        self,
+        invoice,
+        tx_hash: str,
+    ):
+
+        if invoice.status != InvoiceStatus.PENDING:
+            raise ValueError(
+                "Only pending invoice can be paid"
+            )
+
+        invoice.status = InvoiceStatus.PAID
+
+        invoice.tx_hash = tx_hash
+
+    async def mark_expired(
+        self,
+        invoice,
+    ):
+
+        if invoice.status != InvoiceStatus.PENDING:
+            raise ValueError(
+                "Only pending invoice can expire"
+            )
+
+        invoice.status = InvoiceStatus.EXPIRED
