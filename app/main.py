@@ -24,6 +24,11 @@ from aiogram.fsm.storage.memory import (
 from app.handlers.attach import (
     router as attach_router,
 )
+from app.handlers.newproduct import (
+    router as newproduct_router,
+)
+from app.handlers.product_select import router as product_router
+
 
 async def main():
     setup_logging()
@@ -50,6 +55,8 @@ async def main():
     dp.include_router(paytest_router)
     dp.include_router(upload_router)
     dp.include_router(attach_router)
+    dp.include_router(newproduct_router)
+    dp.include_router(product_router)
     
     await bot.set_my_commands([
         BotCommand(
@@ -71,6 +78,10 @@ async def main():
         BotCommand(
             command="attach",
             description="Attach file to product"
+        ),
+        BotCommand(
+            command="newproduct",
+            description="Create new product"
         ),
     ])
 

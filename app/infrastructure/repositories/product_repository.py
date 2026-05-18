@@ -19,6 +19,19 @@ class ProductRepository:
 
         return result.scalars().all()
 
+    async def get_by_id(
+        self,
+        product_id: int,
+    ):
+
+        stmt = select(Product).where(
+            Product.id == product_id
+        )
+
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one_or_none()
+
     async def create_product(
         self,
         title: str,
@@ -44,24 +57,11 @@ class ProductRepository:
         file_id: str,
         file_type: str,
     ):
-    
+
         product.telegram_file_id = file_id
-    
+
         product.file_type = file_type
-    
+
         await self.session.flush()
-    
+
         return product
-        
-    async def get_by_id(
-        self,
-        product_id: int,
-    ):
-    
-        stmt = select(Product).where(
-            Product.id == product_id
-        )
-    
-        result = await self.session.execute(stmt)
-    
-        return result.scalar_one_or_none()

@@ -4,17 +4,9 @@ from aiogram import Bot, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from app.infrastructure.database.uow import (
-    UnitOfWork,
-)
-
-from app.services.delivery_service import (
-    DeliveryService,
-)
-
-from app.services.invoice_service import (
-    InvoiceService,
-)
+from app.infrastructure.database.uow import UnitOfWork
+from app.services.invoice_service import InvoiceService
+from app.services.delivery_service import DeliveryService
 
 router = Router()
 
@@ -28,55 +20,36 @@ async def paytest_command(
     parts = message.text.split()
 
     if len(parts) != 2:
-
-        await message.answer(
-            "Usage: /paytest <invoice_id>"
-        )
-
+        await message.answer("Usage: /paytest <invoice_id>")
         return
 
     invoice_id = int(parts[1])
 
     async with UnitOfWork() as uow:
 
-        invoice_service = InvoiceService(uow)
-
-        delivery_service = DeliveryService(bot)
-
-        invoice = await (
-            uow.invoices.get_by_id(invoice_id)
-        )
+        invoice = await uow.invoices.get_by_id(invoice_id)
 
         if not invoice:
-
-            await message.answer(
-                "Invoice not found"
-            )
-
+            await message.answer("Invoice not found")
             return
+
+        invoice_service = InvoiceService(uow)
+        delivery_service = DeliveryService(bot, uow)
 
         fake_tx_hash = uuid.uuid4().hex
 
         try:
-
             await invoice_service.mark_paid(
                 invoice=invoice,
                 tx_hash=fake_tx_hash,
             )
-
         except ValueError as e:
-
             await message.answer(str(e))
-
             return
 
-        product = invoice.product
-
-        user = invoice.user
-
-        await delivery_service.deliver_product(
-            user_telegram_id=user.telegram_id,
-            product=product,
+        await delivery_service.deliver(
+            invoice=invoice,
+            user_id=message.from_user.id,
         )
 
     await message.answer(
