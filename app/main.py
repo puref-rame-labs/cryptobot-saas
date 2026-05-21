@@ -2,53 +2,45 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from app.config.settings import settings
 from app.config.logging import setup_logging
-from app.handlers.start import (
-    router as start_router,
-)
-from app.infrastructure.database.init_db import init_db
 
-from app.infrastructure.database.uow import UnitOfWork
+from app.handlers.start import router as start_router
 from app.handlers.buy import router as buy_router
-from app.handlers.paytest import (
-    router as paytest_router,
-)
-from app.handlers.upload import (
-    router as upload_router,
-)
-from aiogram.fsm.storage.memory import (
-    MemoryStorage,
-)
-from app.handlers.attach import (
-    router as attach_router,
-)
-from app.handlers.newproduct import (
-    router as newproduct_router,
-)
+from app.handlers.paytest import router as paytest_router
+from app.handlers.upload import router as upload_router
+from app.handlers.attach import router as attach_router
+from app.handlers.newproduct import router as newproduct_router
 from app.handlers.product_select import router as product_router
+
+from app.infrastructure.database.init_db import init_db
+from app.infrastructure.database.uow import UnitOfWork
+from app.services.product_service import ProductService
+
+from app.workers.invoice_expiry import invoice_expiry_loop
+from app.api.server import run_api
+
+
+expiry_task = None
+api_task = None
+bot_task = None
 
 
 async def main():
+    global expiry_task, api_task, bot_task
+
     setup_logging()
 
     bot = Bot(token=settings.BOT_TOKEN)
+    dp = Dispatcher(storage=MemoryStorage())
 
     await init_db()
 
     async with UnitOfWork() as uow:
-        from app.services.product_service import (
-            ProductService,
-        )
-    
         product_service = ProductService(uow)
-    
         await product_service.bootstrap_products()
-
-    dp = Dispatcher(
-        storage=MemoryStorage()
-    )
 
     dp.include_router(start_router)
     dp.include_router(buy_router)
@@ -57,35 +49,28 @@ async def main():
     dp.include_router(attach_router)
     dp.include_router(newproduct_router)
     dp.include_router(product_router)
-    
+
     await bot.set_my_commands([
-        BotCommand(
-            command="start",
-            description="Start bot"
-        ),
-        BotCommand(
-            command="buy",
-            description="Create invoice"
-        ),
-        BotCommand(
-            command="paytest",
-            description="Simulate payment"
-        ),
-        BotCommand(
-            command="upload",
-            description="Upload digital asset"
-        ),
-        BotCommand(
-            command="attach",
-            description="Attach file to product"
-        ),
-        BotCommand(
-            command="newproduct",
-            description="Create new product"
-        ),
+        BotCommand(command="start", description="Start bot"),
+        BotCommand(command="buy", description="Create invoice"),
+        BotCommand(command="paytest", description="Simulate payment"),
+        BotCommand(command="upload", description="Upload digital asset"),
+        BotCommand(command="attach", description="Attach file to product"),
+        BotCommand(command="newproduct", description="Create new product"),
     ])
 
-    await dp.start_polling(bot)
+    expiry_task = asyncio.create_task(invoice_expiry_loop())
+    api_task = asyncio.create_task(run_api())
+    bot_task = asyncio.create_task(dp.start_polling(bot))
+
+    try:
+        await asyncio.gather(api_task, bot_task)
+    finally:
+        expiry_task.cancel()
+        api_task.cancel()
+        bot_task.cancel()
+
+        await bot.session.close()
 
 
 if __name__ == "__main__":

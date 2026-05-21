@@ -42,3 +42,24 @@ class InvoiceRepository:
         result = await self.session.execute(stmt)
 
         return result.scalar_one_or_none()
+
+    async def get_by_external_payment_id(
+        self,
+        external_payment_id: str,
+    ):
+
+        stmt = (
+            select(Invoice)
+            .options(
+                selectinload(Invoice.user),
+                selectinload(Invoice.product),
+            )
+            .where(
+                Invoice.external_payment_id
+                == external_payment_id
+            )
+        )
+
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one_or_none()

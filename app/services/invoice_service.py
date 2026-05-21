@@ -1,18 +1,24 @@
 from datetime import datetime, timedelta
 
-from app.infrastructure.database.models import (
-    Invoice,
-)
-
 from app.domain.invoice_status import (
     InvoiceStatus,
 )
 
+from app.services.payments.factory import (
+    get_payment_provider,
+)
+from app.infrastructure.database.models import (
+    Invoice,
+)
 
 class InvoiceService:
 
     def __init__(self, uow):
+
         self.uow = uow
+        self.payment_provider = (
+            get_payment_provider()
+        )
 
     async def create_invoice(
         self,
@@ -20,48 +26,63 @@ class InvoiceService:
         product,
     ):
 
-        expires_at = (
-            datetime.utcnow() + timedelta(minutes=15)
-        )
-
         invoice = Invoice(
             user_id=user.id,
             product_id=product.id,
             amount=product.price,
             currency=product.currency,
             status=InvoiceStatus.PENDING,
-            expires_at=expires_at,
+            expires_at=(
+                datetime.utcnow()
+                + timedelta(minutes=15)
+            ),
         )
-
-        await self.uow.invoices.create_invoice(
-            invoice
+        
+        invoice = await (
+            self.uow.invoices.create_invoice(
+                invoice=invoice,
+            )
         )
-
-        return invoice
-
+        
+        payment_data = await (
+            self.payment_provider
+            .create_invoice(invoice)
+        )
+        
+        invoice.provider = (
+            self.payment_provider.__class__.__name__
+        )
+        
+        invoice.external_payment_id = (
+            payment_data.external_id
+        )
+        
+        await self.uow.session.commit()
+        
+        return {
+            "invoice": invoice,
+            "payment_data": payment_data,
+        }
+        
     async def mark_paid(
         self,
         invoice,
         tx_hash: str,
     ):
 
-        if invoice.status != InvoiceStatus.PENDING:
+        if (
+            invoice.status
+            == InvoiceStatus.PAID
+        ):
+
             raise ValueError(
-                "Only pending invoice can be paid"
+                "Invoice already paid"
             )
 
-        invoice.status = InvoiceStatus.PAID
+        invoice.status = (
+            InvoiceStatus.PAID
+        )
 
         invoice.tx_hash = tx_hash
 
-    async def mark_expired(
-        self,
-        invoice,
-    ):
-
-        if invoice.status != InvoiceStatus.PENDING:
-            raise ValueError(
-                "Only pending invoice can expire"
-            )
-
-        invoice.status = InvoiceStatus.EXPIRED
+        await self.uow.session.commit()

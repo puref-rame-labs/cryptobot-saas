@@ -26,6 +26,23 @@ class ProductService:
             currency="USDT",
         )
 
+    async def get_catalog(self):
+
+        return await (
+            self.uow.products.get_all_active()
+        )
+
+    async def get_product(
+        self,
+        product_id: int,
+    ):
+
+        return await (
+            self.uow.products.get_by_id(
+                product_id
+            )
+        )
+
     async def create_product(
         self,
         title: str,
@@ -57,15 +74,5 @@ class ProductService:
                 product=product,
                 file_id=file_id,
                 file_type=file_type,
-            )
-        )
-    async def get_product(
-        self,
-        product_id: int,
-    ):
-    
-        return await (
-            self.uow.products.get_by_id(
-                product_id
             )
         )

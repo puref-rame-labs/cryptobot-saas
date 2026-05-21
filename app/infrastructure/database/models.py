@@ -144,6 +144,15 @@ class Invoice(Base):
         String(256),
         nullable=True,
     )
+    provider: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+    )
+    
+    external_payment_id: Mapped[str | None] = mapped_column(
+        String(256),
+        nullable=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -161,4 +170,9 @@ class Invoice(Base):
 
     product: Mapped["Product"] = relationship(
         back_populates="invoices"
+    )
+
+    delivered: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
     )
