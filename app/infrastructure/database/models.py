@@ -176,3 +176,38 @@ class Invoice(Base):
         Boolean,
         default=False,
     )
+
+class PaymentEvent(Base):
+
+    __tablename__ = "payment_events"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    invoice_id: Mapped[int] = mapped_column(
+        ForeignKey("invoices.id"),
+        nullable=False,
+    )
+
+    event_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    provider: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    payload: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+    invoice: Mapped["Invoice"] = relationship()

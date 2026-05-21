@@ -6,6 +6,9 @@ from app.infrastructure.repositories.product_repository import (
 from app.infrastructure.repositories.invoice_repository import (
     InvoiceRepository,
 )
+from app.infrastructure.repositories.payment_event_repository import (
+    PaymentEventRepository,
+)
 
 class UnitOfWork:
     def __init__(self):
@@ -22,6 +25,11 @@ class UnitOfWork:
         )
         self.invoices = InvoiceRepository(
             self.session
+        )
+        self.payment_events = (
+            PaymentEventRepository(
+                self.session
+            )
         )
 
         
