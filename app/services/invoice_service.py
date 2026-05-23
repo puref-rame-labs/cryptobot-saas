@@ -53,10 +53,10 @@ class InvoiceService:
             self.payment_provider.__class__.__name__
         )
         
-        invoice.external_payment_id = (
-            payment_data.external_id
-        )
-        
+        invoice.external_payment_id = str(
+                    payment_data.external_id
+                ).replace("'", "")
+                        
         await self.uow.session.commit()
         
         return {
@@ -85,4 +85,3 @@ class InvoiceService:
 
         invoice.tx_hash = tx_hash
 
-        await self.uow.session.commit()

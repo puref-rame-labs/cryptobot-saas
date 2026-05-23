@@ -1,58 +1,42 @@
 import uuid
-
-from aiogram import Bot, Router
+from aiogram import Router, Bot
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from app.infrastructure.database.uow import UnitOfWork
-from app.services.invoice_service import InvoiceService
-from app.services.delivery_service import DeliveryService
+from app.config.settings import settings
+from app.domain.events import InvoicePaidEvent
+from app.services.event_dispatcher import EventDispatcher
 
 router = Router()
 
 
 @router.message(Command("paytest"))
-async def paytest_command(
-    message: Message,
-    bot: Bot,
-):
+async def paytest_command(message: Message, bot: Bot):
+
+    # 1. security gate
+    if message.from_user.id not in settings.ADMIN_IDS:
+        await message.answer("Access denied")
+        return
 
     parts = message.text.split()
-
     if len(parts) != 2:
         await message.answer("Usage: /paytest <invoice_id>")
         return
 
-    invoice_id = int(parts[1])
+    invoice_id = parts[1]
 
-    async with UnitOfWork() as uow:
+    # 2. simulate EXACT SAME EVENT as webhook
+    event = InvoicePaidEvent(
+        provider="mock",
+        external_payment_id=str(invoice_id),
+        tx_hash=uuid.uuid4().hex,
+    )
 
-        invoice = await uow.invoices.get_by_id(invoice_id)
-
-        if not invoice:
-            await message.answer("Invoice not found")
-            return
-
-        invoice_service = InvoiceService(uow)
-        delivery_service = DeliveryService(bot, uow)
-
-        fake_tx_hash = uuid.uuid4().hex
-
-        try:
-            await invoice_service.mark_paid(
-                invoice=invoice,
-                tx_hash=fake_tx_hash,
-            )
-        except ValueError as e:
-            await message.answer(str(e))
-            return
-
-        await delivery_service.deliver(
-            invoice=invoice,
-            user_id=message.from_user.id,
-        )
+    # 3. send into event pipeline
+    await EventDispatcher.dispatch(event)
 
     await message.answer(
-        f"Invoice #{invoice.id} paid\n"
-        f"TX: {fake_tx_hash[:16]}..."
+        f"Simulated payment event sent\n"
+        f"Invoice: {invoice_id}\n"
+        f"TX: {event.tx_hash[:16]}..."
     )

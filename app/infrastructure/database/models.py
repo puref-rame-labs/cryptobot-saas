@@ -210,4 +210,22 @@ class PaymentEvent(Base):
         default=datetime.utcnow,
     )
 
+    processed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+    )
+    retry_count: Mapped[int] = mapped_column(
+        default=0,
+    )
+    
+    failed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+    )
+    
+    last_error: Mapped[str | None] = mapped_column(
+        String(1024),
+        nullable=True,
+    )
+
     invoice: Mapped["Invoice"] = relationship()

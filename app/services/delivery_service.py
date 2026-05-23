@@ -1,4 +1,4 @@
-from aiogram.types import FSInputFile
+from app.services.bot_instance import get_bot
 
 
 class DeliveryService:
@@ -10,6 +10,9 @@ class DeliveryService:
     async def deliver(self, invoice, user_id: int):
 
         if invoice.delivered:
+            return
+
+        if invoice.status != "PAID":
             return
 
         product = await self.uow.products.get_by_id(
