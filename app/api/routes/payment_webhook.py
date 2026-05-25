@@ -5,8 +5,6 @@ from pydantic import BaseModel
 from app.infrastructure.database.uow import UnitOfWork
 from app.infrastructure.database.models import PaymentEvent
 from app.services.payments.webhook_factory import get_webhook_adapter
-from app.domain.events import InvoicePaidEvent
-from app.services.event_bus import event_bus
 
 router = APIRouter()
 
@@ -61,17 +59,13 @@ async def payment_webhook(
                     invoice_id=invoice.id,
                     event_type="webhook_received",
                     provider=provider,
-                    payload=json.dumps(payload_dict),
+                    payload=json.dumps({
+                        "invoice_id": invoice.id,
+                        "external_payment_id": normalized.external_payment_id,
+                        "tx_hash": normalized.tx_hash,
+                    }),
                 )
             )
         )
-    # 4. emit domain event (NO business logic here)
-    event = InvoicePaidEvent(
-        invoice_id=invoice.id,
-#        provider=provider,
-        external_payment_id=normalized.external_payment_id,
-        tx_hash=normalized.tx_hash,
-    )
-    await event_bus.dispatch(event)
     
     return {"status": "accepted"}

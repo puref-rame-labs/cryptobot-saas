@@ -31,10 +31,6 @@ from app.workers.payment_event_worker import payment_event_worker
 from app.api.server import run_api
 
 
-# ✅ ВАЖНО: event bus регистрация
-from app.services.event_bus import event_bus
-from app.domain.events import InvoicePaidEvent
-from app.services.event_handlers import handle_invoice_paid
 
 
 async def main():
@@ -58,14 +54,7 @@ async def main():
         await product_service.bootstrap_products()
 
     # ---------------------------
-    # EVENT BUS REGISTRATION
-    # ---------------------------
-    event_bus.register(
-        InvoicePaidEvent,
-        handle_invoice_paid
-    )
 
-    # ---------------------------
     # ROUTERS
     # ---------------------------
     dp.include_router(start_router)
