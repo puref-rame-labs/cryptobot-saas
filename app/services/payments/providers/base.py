@@ -10,6 +10,10 @@ from app.services.payments.core.dto.payment_event_dto import (
 class BasePaymentProvider(ABC):
 
     @abstractmethod
+    async def create_invoice(self, invoice):
+        pass
+
+    @abstractmethod
     async def verify_signature(
         self,
         headers: dict,

@@ -12,6 +12,7 @@ class PaymentWebhookSchema(BaseModel):
     provider: str
     external_payment_id: str
     status: str
+    tx_hash: str | None = None
 
 
 @router.post("/payment")
@@ -20,11 +21,9 @@ async def payment_webhook(
     x_webhook_secret: str = Header(),
 ):
 
-    await handle_webhook(
+    return await handle_webhook(
         payload=payload.model_dump(),
         headers={
             "x-webhook-secret": x_webhook_secret,
         },
     )
-
-    return {"status": "accepted"}

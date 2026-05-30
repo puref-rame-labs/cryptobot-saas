@@ -1,20 +1,20 @@
-from app.services.payments.provider_registry import (
-    WEBHOOK_ADAPTERS,
+from app.services.payments.providers.registry import (
+    PROVIDERS,
 )
 
 
-def get_webhook_adapter(
-    provider: str,
+def get_payment_provider(
+    provider_name: str,
 ):
 
-    adapter_class = (
-        WEBHOOK_ADAPTERS.get(provider)
+    provider_class = PROVIDERS.get(
+        provider_name
     )
 
-    if not adapter_class:
+    if not provider_class:
 
         raise ValueError(
-            f"Unknown provider: {provider}"
+            f"Unknown provider: {provider_name}"
         )
 
-    return adapter_class()
+    return provider_class()
