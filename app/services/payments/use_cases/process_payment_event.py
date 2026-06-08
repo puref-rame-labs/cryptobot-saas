@@ -1,0 +1,164 @@
+import json
+import hashlib
+
+from sqlalchemy.exc import IntegrityError
+
+from app.infrastructure.database.models import (
+    PaymentEvent,
+)
+
+from app.infrastructure.database.uow import (
+    UnitOfWork,
+)
+
+from app.services.invoice_service import (
+    InvoiceService,
+)
+
+from app.services.bot_instance import (
+    get_bot,
+)
+
+from app.services.delivery_service import (
+    DeliveryService,
+)
+
+
+def build_idempotency_key(
+    provider: str,
+    external_payment_id: str,
+    event_type: str,
+) -> str:
+
+    raw = (
+        f"{provider}:"
+        f"{external_payment_id}:"
+        f"{event_type}"
+    )
+
+    return hashlib.sha256(
+        raw.encode()
+    ).hexdigest()
+
+
+async def process_payment_event(
+    normalized,
+    provider_name: str,
+):
+
+    idempotency_key = build_idempotency_key(
+        provider=provider_name,
+        external_payment_id=(
+            normalized.external_payment_id
+        ),
+        event_type="payment",
+    )
+
+    async with UnitOfWork() as uow:
+
+        existing = await (
+            uow.payment_events
+            .get_by_idempotency_key(
+                idempotency_key
+            )
+        )
+
+        if existing:
+
+            return {
+                "status": "duplicate"
+            }
+
+        invoice = await (
+            uow.invoices
+            .get_by_external_payment_id(
+                normalized.external_payment_id
+            )
+        )
+
+        if not invoice:
+
+            return {
+                "status": "invoice_not_found"
+            }
+
+        event = PaymentEvent(
+            invoice_id=invoice.id,
+            provider=provider_name,
+            event_type="payment",
+            idempotency_key=idempotency_key,
+            processed=False,
+            payload=json.dumps({
+                "invoice_id": invoice.id,
+                "external_payment_id": (
+                    normalized.external_payment_id
+                ),
+                "tx_hash": (
+                    normalized.tx_hash
+                ),
+                "status": (
+                    normalized.status
+                ),
+            }),
+        )
+
+        try:
+
+            await (
+                uow.payment_events
+                .create_event(event)
+            )
+
+            #
+            # deterministic invoice transition
+            #
+            invoice_service = InvoiceService(
+                uow
+            )
+
+            became_paid = await (
+                invoice_service.mark_paid(
+                    invoice=invoice,
+                    tx_hash=normalized.tx_hash,
+                )
+            )
+
+            #
+            # exactly-once delivery gate
+            #
+            if became_paid:
+            
+                delivery_service = DeliveryService(
+                    bot=get_bot(),
+                    uow=uow,
+                )
+            
+                try:
+            
+                    await delivery_service.deliver(
+                        invoice=invoice,
+                        user_id=(
+                            invoice.user.telegram_id
+                        ),
+                    )
+            
+                    event.processed = True
+            
+                except Exception as e:
+            
+                    event.failed = True
+                    event.last_error = str(e)
+            
+            await uow.session.commit()
+
+        except IntegrityError:
+
+            await uow.session.rollback()
+
+            return {
+                "status": "duplicate"
+            }
+
+    return {
+        "status": "accepted"
+    }

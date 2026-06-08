@@ -200,6 +200,12 @@ class PaymentEvent(Base):
         nullable=False,
     )
 
+    idempotency_key: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+        unique=True,
+    )
+
     payload: Mapped[str] = mapped_column(
         String,
         nullable=False,
