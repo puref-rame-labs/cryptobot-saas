@@ -172,3 +172,49 @@ Possible improvements:
 - transactional outbox pattern
 - event-driven processing pipeline
 ```
+# Retry Semantics
+
+Delivery retry is allowed and expected behavior.
+
+Retrying delivery MUST NOT:
+
+* re-trigger invoice payment transition
+* mutate tx_hash again
+* create duplicate delivery
+* create duplicate invoice state changes
+
+---
+
+# Retry Boundary
+
+Only delivery execution may retry.
+
+Payment confirmation itself is single-transition and immutable.
+
+---
+
+# Retry Guarantees
+
+Repeated delivery attempts MUST remain deterministic.
+
+If delivery succeeds once:
+
+```python
+invoice.delivered = True
+```
+
+all future delivery attempts MUST become no-op.
+
+---
+
+# Terminal Failure
+
+Delivery may eventually become terminally failed after:
+
+* retry limit exceeded
+* unrecoverable delivery error
+* invalid product state
+
+Terminal delivery failure MUST NOT rollback invoice payment state.
+
+Paid invoice remains PAID even if delivery permanently fails.

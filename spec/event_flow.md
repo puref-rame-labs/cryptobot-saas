@@ -12,19 +12,73 @@ User
 
 ---
 
-## Payment Flow
+##  Payment Flow
 
 Provider
 -> FastAPI webhook
 -> verify_signature()
 -> normalize()
--> compute idempotency_key
--> check PaymentEvent (deduplication gate)
+-> ingestion layer
 -> persist PaymentEvent
--> if not processed:
-    -> transition invoice state
-    -> execute delivery
-    -> mark PaymentEvent as processed
+-> process_payment_event()
+-> transition invoice state
+-> trigger delivery
+-> mark event processed
+
+---
+
+# Processing Semantics
+
+Webhook ingestion MUST remain side-effect minimal.
+
+Responsibilities of ingestion layer:
+
+* verify signature
+* normalize provider payload
+* pass canonical DTO to processing layer
+
+Business logic MUST NOT execute directly inside HTTP route layer.
+
+---
+
+# Processing Layer Responsibilities
+
+process_payment_event() is responsible for:
+
+* idempotency guard
+* invoice lookup
+* state transition
+* tx_hash persistence
+* delivery triggering
+* processed flag update
+
+---
+
+# Delivery Trigger Rules
+
+Delivery execution is allowed only after:
+
+* invoice.status == PAID
+* invoice.delivered == False
+
+---
+
+# Failure Semantics
+
+If delivery fails:
+
+* invoice remains PAID
+* PaymentEvent remains unprocessed
+* retry becomes possible later
+
+---
+
+# Success Semantics
+
+After successful processing:
+
+* PaymentEvent.processed = True
+* invoice.delivered = True
 
 ---
 

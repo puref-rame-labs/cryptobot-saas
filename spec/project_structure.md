@@ -111,3 +111,69 @@ events/
 delivery/
 admin/
 ```
+
+---
+
+# Delivery Layer
+
+Delivery subsystem is responsible for:
+
+* digital content delivery
+* exactly-once delivery semantics
+* retry-safe execution
+* delivery isolation from payment providers
+
+---
+
+# Delivery Rules
+
+Delivery layer MUST NOT:
+
+* mutate invoice payment state
+* validate provider payloads
+* perform payment transitions
+
+Delivery layer ONLY:
+
+* execute product delivery
+* mark invoice as delivered
+* raise delivery failures
+
+---
+
+# Delivery Retry Model
+
+Delivery retries are allowed only for:
+
+* transient Telegram failures
+* network failures
+* temporary infrastructure errors
+
+Retries MUST remain idempotent.
+
+---
+
+# Delivery Ownership
+
+Delivery orchestration belongs to:
+
+```text
+app/services/delivery/
+```
+
+Webhook handlers and providers MUST NOT execute delivery directly.
+
+---
+
+# Future Delivery Evolution
+
+Planned future improvements:
+
+* retry queues
+* delayed retries
+* dead letter queue
+* distributed workers
+* delivery event bus
+
+```
+```

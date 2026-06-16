@@ -26,7 +26,7 @@ from app.infrastructure.database.uow import UnitOfWork
 from app.services.product_service import ProductService
 
 from app.workers.invoice_expiry import invoice_expiry_loop
-from app.workers.payment_event_worker import payment_event_worker
+#from app.workers.payment_event_worker import payment_event_worker
 
 from app.api.server import run_api
 
@@ -94,7 +94,7 @@ async def main():
     # BACKGROUND TASKS
     # ---------------------------
     expiry_task = asyncio.create_task(invoice_expiry_loop())
-    payment_worker_task = asyncio.create_task(payment_event_worker())
+#    payment_worker_task = asyncio.create_task(payment_event_worker())
     api_task = asyncio.create_task(run_api())
 
     bot_task = asyncio.create_task(dp.start_polling(bot))
@@ -107,7 +107,7 @@ async def main():
 
     finally:
         expiry_task.cancel()
-        payment_worker_task.cancel()
+ #       payment_worker_task.cancel()
         api_task.cancel()
         bot_task.cancel()
 
