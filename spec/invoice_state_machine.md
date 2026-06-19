@@ -44,7 +44,9 @@ Delivery is allowed ONLY when:
 After successful delivery:
 
 * invoice.delivered = True
+Delivery failures do not affect invoice state transitions.
 
+Invoice remains PAID even if delivery is impossible due to missing product content.
 ---
 
 # Idempotency Rules

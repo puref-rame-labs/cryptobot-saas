@@ -105,9 +105,22 @@ All payment state transitions must happen through Invoice.
 * product price must be positive
 * product currency must exist
 * product content cannot be empty
-
+* product is considered deliverable only if telegram_file_id is not NULL
 ---
 
 # User Invariants
 
 * telegram_id must be unique
+---
+
+# Product Delivery Rule
+
+Delivery system MUST treat product as invalid for delivery if:
+
+* telegram_file_id is NULL
+
+In this case:
+
+* delivery MUST NOT be attempted
+* this is NOT a system error
+* this is a domain validation failure

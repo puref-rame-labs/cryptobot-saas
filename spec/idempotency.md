@@ -94,7 +94,11 @@ Only one execution is allowed for:
 - tx_hash assignment
 
 Repeated events MUST NOT trigger these again.
+Delivery validation failures (e.g. missing product content) MUST NOT bypass idempotency rules.
 
+Such failures are still considered processed events if:
+- PaymentEvent was already stored
+- invoice transition was already executed or skipped safely
 ---
 
 # Delivery Protection Rule

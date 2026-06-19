@@ -70,7 +70,7 @@ If delivery fails:
 * invoice remains PAID
 * PaymentEvent remains unprocessed
 * retry becomes possible later
-
+* delivery failure is treated as DOMAIN failure, not system failure
 ---
 
 # Success Semantics
@@ -119,3 +119,20 @@ payment_confirmed
 delivery_requested
     ->
 delivery_completed
+
+---
+
+# Webhook Safety Boundary
+
+Webhook ingestion layer MUST NEVER produce HTTP 500 for domain-level errors.
+
+Allowed behavior:
+
+* return controlled HTTP response (200/400/409 depending on case)
+* persist PaymentEvent before processing
+* isolate DeliveryService exceptions from API layer
+
+Disallowed:
+
+* raising unhandled exceptions from delivery or payment processing
+* leaking domain errors to HTTP layer

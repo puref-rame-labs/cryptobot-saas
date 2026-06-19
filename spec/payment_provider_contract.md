@@ -116,3 +116,4 @@ Providers ONLY:
 * normalize
 * validate
 * create external invoices
+* throw exceptions for missing product state is NOT allowed in provider layer
