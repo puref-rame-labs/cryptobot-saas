@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from enum import Enum
 
 from sqlalchemy import (
     ForeignKey,
@@ -17,19 +18,24 @@ from sqlalchemy.orm import (
 )
 
 from app.infrastructure.database.base import Base
-
-from app.domain.invoice_status import (
-    InvoiceStatus,
-)
+from app.domain.invoice_status import InvoiceStatus
 
 
+# -------------------------
+# PRODUCT STATUS (DOMAIN EXTENSION)
+# -------------------------
+class ProductStatus(str, Enum):
+    DRAFT = "DRAFT"
+    READY = "READY"
+
+
+# -------------------------
+# USER
+# -------------------------
 class User(Base):
-
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     telegram_id: Mapped[int] = mapped_column(
         BigInteger,
@@ -52,13 +58,13 @@ class User(Base):
     )
 
 
+# -------------------------
+# PRODUCT
+# -------------------------
 class Product(Base):
-
     __tablename__ = "products"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     title: Mapped[str] = mapped_column(
         String(128),
@@ -101,18 +107,25 @@ class Product(Base):
         nullable=True,
     )
 
+    # VECTOR 1 — PRODUCT READINESS STATE
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default=ProductStatus.DRAFT.value,
+    )
+
     invoices: Mapped[list["Invoice"]] = relationship(
         back_populates="product"
     )
 
 
+# -------------------------
+# INVOICE
+# -------------------------
 class Invoice(Base):
-
     __tablename__ = "invoices"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
@@ -137,18 +150,21 @@ class Invoice(Base):
     status: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
-        default=InvoiceStatus.PENDING,
+        default=InvoiceStatus.PENDING.value
+        if hasattr(InvoiceStatus.PENDING, "value")
+        else InvoiceStatus.PENDING,
     )
 
     tx_hash: Mapped[str | None] = mapped_column(
         String(256),
         nullable=True,
     )
+
     provider: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
     )
-    
+
     external_payment_id: Mapped[str | None] = mapped_column(
         String(256),
         nullable=True,
@@ -164,6 +180,11 @@ class Invoice(Base):
         nullable=False,
     )
 
+    delivered: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+    )
+
     user: Mapped["User"] = relationship(
         back_populates="invoices"
     )
@@ -172,18 +193,14 @@ class Invoice(Base):
         back_populates="invoices"
     )
 
-    delivered: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-    )
 
+# -------------------------
+# PAYMENT EVENT
+# -------------------------
 class PaymentEvent(Base):
-
     __tablename__ = "payment_events"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     invoice_id: Mapped[int] = mapped_column(
         ForeignKey("invoices.id"),
@@ -220,15 +237,16 @@ class PaymentEvent(Base):
         Boolean,
         default=False,
     )
+
     retry_count: Mapped[int] = mapped_column(
         default=0,
     )
-    
+
     failed: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
     )
-    
+
     last_error: Mapped[str | None] = mapped_column(
         String(1024),
         nullable=True,

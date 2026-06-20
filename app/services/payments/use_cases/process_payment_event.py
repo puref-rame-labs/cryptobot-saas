@@ -32,13 +32,6 @@ async def process_payment_event(
 
     async with UnitOfWork() as uow:
 
-        existing = await uow.payment_events.get_by_idempotency_key(
-            idempotency_key
-        )
-
-        if existing:
-            return {"status": "duplicate"}
-
         invoice = await uow.invoices.get_by_external_payment_id(
             normalized.external_payment_id
         )
@@ -67,21 +60,25 @@ async def process_payment_event(
 
             invoice_service = InvoiceService(uow)
 
-            became_paid = await invoice_service.mark_paid(
+            await invoice_service.mark_paid(
                 invoice=invoice,
                 tx_hash=normalized.tx_hash,
             )
 
-            if became_paid:
-                await DeliveryService(
-                    bot=get_bot(),
-                    uow=uow,
-                ).deliver(
-                    invoice=invoice,
-                    user_id=invoice.user.telegram_id,
-                )
+            delivery = DeliveryService(bot=get_bot(), uow=uow)
 
-                event.processed = True
+            result = await delivery.deliver(
+                invoice=invoice,
+                user_id=invoice.user.telegram_id,
+            )
+
+            if result.success:
+                invoice.status = "DELIVERED"
+                invoice.delivered = True
+            else:
+                invoice.status = "FAILED"
+
+            event.processed = True
 
             await uow.session.commit()
 
