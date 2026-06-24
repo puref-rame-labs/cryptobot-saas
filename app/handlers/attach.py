@@ -7,6 +7,8 @@ from app.config.settings import settings
 from app.states.upload_state import UploadStates
 from app.infrastructure.database.uow import UnitOfWork
 
+from app.services.product.use_cases.attach_file import AttachProductFileUseCase
+
 router = Router()
 
 
@@ -29,7 +31,6 @@ async def attach_command(message: Message, state: FSMContext):
     product_id = int(parts[1])
 
     await state.update_data(product_id=product_id)
-
     await state.set_state(UploadStates.waiting_for_file)
 
     await message.answer("Send file for product")
@@ -71,11 +72,17 @@ async def handle_file_upload(message: Message, state: FSMContext):
             await message.answer("Product not found")
             return
 
-        product.telegram_file_id = file_id
-        product.file_type = file_type
-        product.status = "READY"
+        # -------------------------
+        # USE CASE (source of truth)
+        # -------------------------
+        use_case = AttachProductFileUseCase(uow)
 
-        await uow.session.flush()
+        await use_case.execute(
+            product=product,
+            file_id=file_id,
+            file_type=file_type,
+        )
+
         await uow.session.commit()
 
     await state.clear()

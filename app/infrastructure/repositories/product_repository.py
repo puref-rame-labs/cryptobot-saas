@@ -5,32 +5,35 @@ from app.infrastructure.database.models import Product
 
 
 class ProductRepository:
+    """
+    Persistence layer only:
+    - no business logic
+    - no state transitions
+    - no file attachment mutations
+    """
 
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_all_active(self):
+    # -------------------------
+    # QUERIES
+    # -------------------------
 
-        stmt = select(Product).where(
-            Product.is_active == True
-        )
+    async def get_all_active(self):
+        stmt = select(Product).where(Product.is_active.is_(True))
 
         result = await self.session.execute(stmt)
-
         return result.scalars().all()
 
-    async def get_by_id(
-        self,
-        product_id: int,
-    ):
-
-        stmt = select(Product).where(
-            Product.id == product_id
-        )
+    async def get_by_id(self, product_id: int):
+        stmt = select(Product).where(Product.id == product_id)
 
         result = await self.session.execute(stmt)
-
         return result.scalar_one_or_none()
+
+    # -------------------------
+    # CREATE
+    # -------------------------
 
     async def create_product(
         self,
@@ -38,7 +41,7 @@ class ProductRepository:
         description: str | None,
         price,
         currency: str = "USDT",
-    ):
+    ) -> Product:
 
         product = Product(
             title=title,
@@ -48,20 +51,6 @@ class ProductRepository:
         )
 
         self.session.add(product)
-
-        return product
-
-    async def attach_file(
-        self,
-        product,
-        file_id: str,
-        file_type: str,
-    ):
-
-        product.telegram_file_id = file_id
-
-        product.file_type = file_type
-
-        await self.session.flush()
+        await self.session.flush()  # чтобы появился product.id
 
         return product

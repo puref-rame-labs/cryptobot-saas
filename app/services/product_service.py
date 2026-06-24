@@ -1,9 +1,5 @@
 from decimal import Decimal
 
-from app.infrastructure.database.models import (
-    Product,
-)
-
 
 class ProductService:
 
@@ -12,9 +8,7 @@ class ProductService:
 
     async def bootstrap_products(self):
 
-        products = await (
-            self.uow.products.get_all_active()
-        )
+        products = await self.uow.products.get_all_active()
 
         if products:
             return
@@ -28,20 +22,11 @@ class ProductService:
 
     async def get_catalog(self):
 
-        return await (
-            self.uow.products.get_all_active()
-        )
+        return await self.uow.products.get_all_active()
 
-    async def get_product(
-        self,
-        product_id: int,
-    ):
+    async def get_product(self, product_id: int):
 
-        return await (
-            self.uow.products.get_by_id(
-                product_id
-            )
-        )
+        return await self.uow.products.get_by_id(product_id)
 
     async def create_product(
         self,
@@ -51,28 +36,9 @@ class ProductService:
         currency: str = "USDT",
     ):
 
-        product = await (
-            self.uow.products.create_product(
-                title=title,
-                description=description,
-                price=price,
-                currency=currency,
-            )
-        )
-
-        return product
-
-    async def attach_file(
-        self,
-        product,
-        file_id: str,
-        file_type: str,
-    ):
-
-        return await (
-            self.uow.products.attach_file(
-                product=product,
-                file_id=file_id,
-                file_type=file_type,
-            )
+        return await self.uow.products.create_product(
+            title=title,
+            description=description,
+            price=price,
+            currency=currency,
         )

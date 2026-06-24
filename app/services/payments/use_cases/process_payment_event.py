@@ -3,35 +3,31 @@ import hashlib
 
 from sqlalchemy.exc import IntegrityError
 
-from app.infrastructure.database.models import PaymentEvent
 from app.infrastructure.database.uow import UnitOfWork
-from app.services.invoice_service import InvoiceService
-from app.services.bot_instance import get_bot
+from app.infrastructure.database.models import PaymentEvent
+
+from app.services.invoice.use_cases.mark_paid import MarkInvoicePaidUseCase
+from app.services.invoice.use_cases.deliver_invoice import DeliverInvoiceUseCase
 from app.services.delivery.service import DeliveryService
 
 
-def build_idempotency_key(
-    provider: str,
-    external_payment_id: str,
-    event_type: str,
-) -> str:
-    raw = f"{provider}:{external_payment_id}:{event_type}"
-    return hashlib.sha256(raw.encode()).hexdigest()
+def build_idempotency_key(provider, external_payment_id, event_type):
+    return hashlib.sha256(
+        f"{provider}:{external_payment_id}:{event_type}".encode()
+    ).hexdigest()
 
 
-async def process_payment_event(
-    normalized,
-    provider_name: str,
-):
+async def process_payment_event(normalized, provider_name: str):
 
     idempotency_key = build_idempotency_key(
-        provider=provider_name,
-        external_payment_id=normalized.external_payment_id,
-        event_type="payment",
+        provider_name,
+        normalized.external_payment_id,
+        "payment",
     )
 
     async with UnitOfWork() as uow:
 
+        # 1. LOAD INVOICE
         invoice = await uow.invoices.get_by_external_payment_id(
             normalized.external_payment_id
         )
@@ -39,47 +35,46 @@ async def process_payment_event(
         if not invoice:
             return {"status": "invoice_not_found"}
 
+        # 2. IDEMPOTENCY EVENT
         event = PaymentEvent(
             invoice_id=invoice.id,
             provider=provider_name,
             event_type="payment",
             idempotency_key=idempotency_key,
             processed=False,
-            payload=json.dumps(
-                {
-                    "invoice_id": invoice.id,
-                    "external_payment_id": normalized.external_payment_id,
-                    "tx_hash": normalized.tx_hash,
-                    "status": normalized.status,
-                }
-            ),
+            payload=json.dumps({
+                "invoice_id": invoice.id,
+                "tx_hash": normalized.tx_hash,
+            }),
         )
 
         try:
             await uow.payment_events.create_event(event)
 
-            invoice_service = InvoiceService(uow)
+            # 3. DOMAIN STEP: MARK PAID
+            paid_uc = MarkInvoicePaidUseCase(uow)
+            ok = await paid_uc.execute(invoice, normalized.tx_hash)
 
-            await invoice_service.mark_paid(
-                invoice=invoice,
-                tx_hash=normalized.tx_hash,
-            )
+            if not ok:
+                event.failed = True
+                event.last_error = "invalid_transition"
+                await uow.session.commit()
+                return {"status": "invalid_transition"}
 
-            delivery = DeliveryService(bot=get_bot(), uow=uow)
+            # 4. SIDE EFFECT: DELIVERY
+            delivery_service = DeliveryService(uow=uow)
+            deliver_uc = DeliverInvoiceUseCase(delivery_service)
 
-            result = await delivery.deliver(
-                invoice=invoice,
-                user_id=invoice.user.telegram_id,
-            )
+            ok = await deliver_uc.execute(invoice)
 
-            if result.success:
-                invoice.status = "DELIVERED"
-                invoice.delivered = True
+            # 5. FINAL EVENT STATE
+            if ok:
+                event.processed = True
             else:
-                invoice.status = "FAILED"
+                event.failed = True
+                event.last_error = "delivery_failed"
 
-            event.processed = True
-
+            # 6. SINGLE COMMIT POINT
             await uow.session.commit()
 
         except IntegrityError:

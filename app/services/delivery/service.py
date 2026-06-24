@@ -1,5 +1,6 @@
 from app.services.bot_instance import get_bot
 from app.infrastructure.database.models import Invoice
+from app.domain.invoice.state_machine import InvoiceState
 
 
 class DeliveryResult:
@@ -15,15 +16,18 @@ class DeliveryService:
         self.uow = uow
 
     async def deliver(self, invoice: Invoice, user_id: int) -> DeliveryResult:
-        # delivery is idempotent at caller level; no internal state guards
+
+        # IDEMPOTENCY GUARANTEE (state-based)
+        if invoice.status == InvoiceState.DELIVERED.value:
+            return DeliveryResult(success=True, reason="already_delivered")
+
+        if invoice.status != InvoiceState.PAID.value:
+            return DeliveryResult(success=False, reason="invalid_state")
 
         product = await self.uow.products.get_by_id(invoice.product_id)
 
         if not product or not product.telegram_file_id:
-            return DeliveryResult(
-                success=False,
-                reason="missing_file",
-            )
+            return DeliveryResult(success=False, reason="missing_file")
 
         try:
             caption = f"Your product: {product.title}"
@@ -44,7 +48,4 @@ class DeliveryService:
             return DeliveryResult(success=True)
 
         except Exception:
-            return DeliveryResult(
-                success=False,
-                reason="telegram_error",
-            )
+            return DeliveryResult(success=False, reason="telegram_error")
