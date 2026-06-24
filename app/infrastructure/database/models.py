@@ -180,10 +180,6 @@ class Invoice(Base):
         nullable=False,
     )
 
-    delivered: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-    )
 
     user: Mapped["User"] = relationship(
         back_populates="invoices"
