@@ -1,12 +1,8 @@
+from app.domain.product.state_machine import ProductState
 from app.domain.product.state_machine import ProductStateMachine
 
 
 class AttachProductFileUseCase:
-    """
-    Application layer use-case:
-    - orchestration only
-    - no repository mutation methods
-    """
 
     def __init__(self, uow):
         self.uow = uow
@@ -18,16 +14,18 @@ class AttachProductFileUseCase:
         if not product:
             return {"status": "not_found"}
 
-        # idempotent update
         product.telegram_file_id = file_id
         product.file_type = file_type
 
-        # domain transition
-        product.status = ProductStateMachine.mark_ready(product.status)
+        current = product.status
+        target = ProductState.READY.value
+
+        if current != target:
+            product.status = ProductStateMachine.mark_ready(current)
 
         await self.uow.session.flush()
 
         return {
-            "product": product,
             "status": "ok",
+            "product": product,
         }
