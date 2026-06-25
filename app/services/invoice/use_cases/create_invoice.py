@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from app.infrastructure.database.models import Invoice
 from app.services.payments.factory import get_payment_provider
 from app.domain.invoice_status import InvoiceStatus
+from app.domain.product.state_machine import ProductState
 
 
 class CreateInvoiceUseCase:
@@ -13,8 +14,11 @@ class CreateInvoiceUseCase:
     async def execute(self, user, product, provider_name: str = "mock"):
 
         # 1. DOMAIN GUARD
-        if product.status != "READY":
-            raise ValueError("Product not READY")
+        if product.status is None:
+            raise ValueError("Product invalid state")
+
+        if product.status != ProductState.READY.value:
+            raise ValueError(f"Product not purchasable: {product.status}")
 
         if not product.telegram_file_id:
             raise ValueError("Product not deliverable")
@@ -30,18 +34,16 @@ class CreateInvoiceUseCase:
             expires_at=datetime.utcnow() + timedelta(minutes=15),
         )
 
-        # 3. PERSIST (single source of truth: session, not repo logic)
+        # 3. PERSIST
         self.uow.invoices.session.add(invoice)
         await self.uow.session.flush()
 
         # 4. PAYMENT PROVIDER
         provider = get_payment_provider(provider_name)
-
         payment_data = await provider.create_invoice(invoice)
 
         # 5. UPDATE ENTITY
         invoice.external_payment_id = str(payment_data.external_id)
-
         await self.uow.session.flush()
 
         # 6. RESULT
