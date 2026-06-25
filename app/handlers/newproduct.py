@@ -9,7 +9,9 @@ from app.states.product_state import ProductStates
 from app.utils.access import is_admin
 
 from app.infrastructure.database.uow import UnitOfWork
+
 from app.services.product_service import ProductService
+from app.services.product.use_cases.attach_file import AttachProductFileUseCase
 
 router = Router()
 
@@ -98,8 +100,8 @@ async def product_file_handler(message: Message, state: FSMContext):
             currency=data["currency"],
         )
 
-        # FIX: attachment теперь через service/use-case слой
-        await product_service.attach_file(
+        # ARCHITECTURE FIX: use-case layer only
+        await AttachProductFileUseCase(uow).execute(
             product_id=product.id,
             file_id=file_id,
             file_type=file_type,
