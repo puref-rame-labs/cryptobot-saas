@@ -1,119 +1,64 @@
 # Payment Provider Contract
 
-# Purpose
+---
 
-Payment providers abstract external payment systems.
+## Purpose
 
-Each provider MUST implement identical interface.
+Unified abstraction over external payment systems.
 
 ---
 
-# Required Methods
+## Interface
 
-## create_invoice
+### create_invoice
 
-Signature:
-
-```python
 async def create_invoice(invoice)
-```
 
-Responsibilities:
-
-* create external payment object
-* return normalized DTO
+- creates external payment object
+- returns PaymentDTO
 
 ---
 
-## verify_signature
+### verify_signature
 
-Signature:
-
-```python
 async def verify_signature(headers, payload)
-```
 
-Responsibilities:
-
-* validate webhook authenticity
-* return boolean
+- validates webhook authenticity
+- returns bool
 
 ---
 
-## normalize
+### normalize
 
-Signature:
-
-```python
 async def normalize(payload)
-```
 
-Responsibilities:
-
-* convert provider payload into canonical DTO
+- converts provider payload into canonical DTO
 
 ---
 
-# Required DTO
+## DTO Contract
 
-normalize() MUST return:
+PaymentEventDTO:
 
-```python
-PaymentEventDTO
-```
-
----
-
-# PaymentEventDTO Contract
-
-Required fields:
-
-```python
-invoice_id: int
-provider: str
-external_payment_id: str
-status: str
-```
-
-Optional fields:
-
-```python
-tx_hash: Optional[str]
-```
+- invoice_id
+- provider
+- external_payment_id
+- status
+- tx_hash (optional)
 
 ---
 
-# Provider Registry
-
-All providers MUST be registered in:
-
-```python
-app/services/payments/providers/registry.py
-```
-
----
-
-# Factory Rules
-
-Provider creation MUST happen only through:
-
-```python
-get_payment_provider(provider_name)
-```
-
----
-
-# Provider Isolation
+## Provider Rules
 
 Providers MUST NOT:
 
-* mutate database directly
-* access Telegram bot
-* execute delivery logic
+- access DB
+- perform delivery
+- enforce product state rules
+- contain business logic
 
 Providers ONLY:
 
-* normalize
-* validate
-* create external invoices
-* throw exceptions for missing product state is NOT allowed in provider layer
+- transform data
+- validate signatures
+- interact with external API

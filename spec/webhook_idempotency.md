@@ -1,83 +1,42 @@
-# Webhook Idempotency Specification
+# Webhook Idempotency
+
+---
 
 ## Purpose
 
-Ensure deterministic and exactly-once business effects under at-least-once webhook delivery.
+Guarantee exactly-once effects under at-least-once delivery.
 
 ---
 
-## Idempotency Key Definition
+## Algorithm
 
-Each webhook event MUST be uniquely identified by:
-
-- provider
-- external_payment_id
-- event_type (optional but recommended)
-
-Canonical idempotency key:
-idempotency_key = hash(provider + external_payment_id + event_type)
-
-
-If event_type is missing, use "payment" as default.
+1. compute idempotency_key
+2. check PaymentEvent
+3. if exists AND processed → STOP
+4. persist event
+5. process event
 
 ---
 
-## Processing Rule
+## Guarantees
 
-Before ANY side effects:
-
-1. Compute idempotency_key
-2. Check PaymentEvent with same idempotency_key
-3. If exists AND processed == True → STOP (no-op)
-4. Otherwise continue processing
+- at-least-once ingestion
+- exactly-once business effect
+- deterministic replay behavior
 
 ---
 
-## Enforcement Point
+## Side Effect Scope
 
-Idempotency MUST be enforced in application layer:
+Allowed ONLY after gate:
 
-- app/services/payment_service.py
-- or webhook use case handler
-
-NOT in:
-
-- provider layer
-- API layer
-- Telegram handlers
-
----
-
-## Allowed Side Effects (after passing gate)
-
-Only after idempotency validation:
-
-- persist PaymentEvent
-- invoice state transition
+- invoice transition
 - delivery trigger
 
 ---
 
 ## Persistence Rule
 
-All webhook events MUST be persisted regardless of processing result.
+EVERY webhook event must be stored.
 
----
-
-## Failure Mode Handling
-
-If duplicate webhook arrives:
-
-- PaymentEvent is still stored (audit log)
-- invoice MUST NOT change state again
-- delivery MUST NOT execute again
-
----
-
-## System Guarantee
-
-System guarantees:
-
-- at-least-once ingestion
-- exactly-once business effects
-  (invoice transition + delivery)
+Even invalid ones.

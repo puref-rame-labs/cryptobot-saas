@@ -6,14 +6,13 @@ from aiogram.types import Message
 from app.config.settings import settings
 from app.states.upload_state import UploadStates
 from app.infrastructure.database.uow import UnitOfWork
-
 from app.services.product.use_cases.attach_file import AttachProductFileUseCase
 
 router = Router()
 
 
 # -------------------------
-# STEP 1: INIT ATTACH FLOW
+# INIT ATTACH FLOW
 # -------------------------
 @router.message(Command("attach"))
 async def attach_command(message: Message, state: FSMContext):
@@ -37,13 +36,16 @@ async def attach_command(message: Message, state: FSMContext):
 
 
 # -------------------------
-# STEP 2: FILE RECEIVER → PRODUCT READY
+# FILE RECEIVER
 # -------------------------
 @router.message(UploadStates.waiting_for_file)
 async def handle_file_upload(message: Message, state: FSMContext):
+    print("1) FSM HIT attach handler")
 
     data = await state.get_data()
     product_id = data.get("product_id")
+    print("2) FSM DATA:", data)
+    print("2) PRODUCT ID:", product_id)
 
     if not product_id:
         await message.answer("Missing product context")
@@ -65,26 +67,31 @@ async def handle_file_upload(message: Message, state: FSMContext):
         return
 
     async with UnitOfWork() as uow:
-
-        product = await uow.products.get_by_id(product_id)
-
-        if not product:
-            await message.answer("Product not found")
-            return
-
-        # -------------------------
-        # USE CASE (source of truth)
-        # -------------------------
-        use_case = AttachProductFileUseCase(uow)
-
-        await use_case.execute(
-            product=product,
+        print("3) BEFORE USE CASE")
+        print("3) file_id:", file_id)
+        print("3) file_type:", file_type)
+        
+        result = await AttachProductFileUseCase(uow).execute(
+            product_id=product_id,
             file_id=file_id,
             file_type=file_type,
         )
 
-        await uow.session.commit()
+        if result["status"] != "ok":
+            await message.answer(f"Attach failed: {result.get('reason', 'unknown')}")
+            return
+
+        await uow.session.flush()
+        print("8) AFTER USE CASE RETURNED")
+        print("product_id:", product_id)
+        print("final product.status:", product.status)
 
     await state.clear()
 
-    await message.answer("Product is now READY")
+    product = result["product"]
+
+    await message.answer(
+        f"Product attached\n"
+        f"ID: {product.id}\n"
+        f"Status: {product.status}"
+    )

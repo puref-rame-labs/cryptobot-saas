@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from app.infrastructure.database.models import Invoice
 from app.services.payments.factory import get_payment_provider
 from app.domain.invoice_status import InvoiceStatus
-from app.domain.product.state_machine import ProductState
+from app.domain.product.policy import ProductPolicy
 
 
 class CreateInvoiceUseCase:
@@ -17,7 +17,7 @@ class CreateInvoiceUseCase:
         if product.status is None:
             raise ValueError("Product invalid state")
 
-        if product.status != ProductState.READY.value:
+        if not ProductPolicy.can_be_purchased(product.status):
             raise ValueError(f"Product not purchasable: {product.status}")
 
         if not product.telegram_file_id:
@@ -46,7 +46,6 @@ class CreateInvoiceUseCase:
         invoice.external_payment_id = str(payment_data.external_id)
         await self.uow.session.flush()
 
-        # 6. RESULT
         return {
             "invoice": invoice,
             "payment_data": payment_data,

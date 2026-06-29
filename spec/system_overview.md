@@ -2,130 +2,69 @@
 
 ## Project
 
-Crypto payment Telegram bot for digital goods delivery.
-
-The system allows users to:
-
-* browse products
-* create invoices
-* pay with cryptocurrency
-* receive digital goods automatically
+cryptobot — Telegram bot for selling digital goods via cryptocurrency payments with automated delivery.
 
 ---
 
-# Core Components
+## Core Architecture
 
-## Telegram Bot
+Hybrid layered + event-driven system:
 
-Responsible for:
-
-* user interaction
-* command handling
-* invoice creation
-* delivery messaging
-
-Stack:
-
-* aiogram
+- domain (pure rules)
+- services (use-cases)
+- infrastructure (DB, providers)
+- api (webhooks)
+- handlers (Telegram UI)
 
 ---
 
-## API Layer
-
-Responsible for:
-
-* webhook receiving
-* provider callbacks
-* payment event ingestion
-
-Stack:
-
-* FastAPI
-* uvicorn
-
----
-
-## Payment Providers
-
-Abstract payment gateway layer.
-
-Current provider:
-
-* mock
-
-Future providers:
-
-* Cryptomus
-* NowPayments
-* custom blockchain watcher
-
----
-
-## Database
-
-Stores:
-
-* users
-* products
-* invoices
-* payment events
-
-Current engine:
-
-* SQLite
-
-Future:
-
-* PostgreSQL
-
----
-
-# Main Flow
+## Main Flow
 
 1. User sends /buy
-2. Invoice created
-3. Provider invoice generated
-4. User pays
-5. Provider sends webhook
-6. Webhook normalized
-7. Invoice marked as PAID
-8. Delivery executed
-9. Payment event persisted
+2. System checks PRODUCT is PUBLISHED
+3. Invoice is created (PENDING)
+4. Payment provider creates external invoice
+5. User pays externally
+6. Provider sends webhook
+7. Webhook is normalized + deduplicated
+8. Invoice becomes PAID
+9. Delivery is executed
+10. PaymentEvent stored
 
 ---
 
-# Architectural Style
+## System Guarantees
 
-Hybrid layered + event-driven architecture.
-
-Main layers:
-
-* domain
-* services
-* infrastructure
-* api
-* handlers
+- Exactly-once invoice state transition
+- Exactly-once delivery
+- At-least-once webhook ingestion
+- Provider abstraction
+- Deterministic state machine behavior
 
 ---
 
-# System Guarantees
+## Product Gate Rule (CRITICAL)
 
-The system must guarantee:
+Only PUBLISHED products are purchasable.
 
-* invoice consistency
-* idempotent webhook processing
-* deterministic delivery
-* provider abstraction
-* atomic payment transitions
+READY is NOT purchasable.
 
 ---
 
-# Non Goals
+## Current Stack
 
-Current MVP does NOT include:
+- Python 3.13
+- aiogram
+- FastAPI
+- SQLAlchemy
+- SQLite (dev)
 
-* refunds
-* subscriptions
-* admin dashboard
-* distributed workers
-* blockchain node integration
+---
+
+## Non-goals (MVP)
+
+- refunds
+- distributed workers
+- blockchain node integration
+- admin panel
+- observability stack

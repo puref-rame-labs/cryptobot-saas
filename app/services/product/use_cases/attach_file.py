@@ -1,9 +1,6 @@
-from app.domain.product.state_machine import ProductState
-from app.domain.product.state_machine import ProductStateMachine
-
+from app.domain.product.state_machine import ProductStateMachine, ProductState
 
 class AttachProductFileUseCase:
-
     def __init__(self, uow):
         self.uow = uow
 
@@ -14,15 +11,21 @@ class AttachProductFileUseCase:
         if not product:
             return {"status": "not_found"}
 
+        # DOMAIN GUARD
+        if not ProductStateMachine.can_attach(product.status):
+            return {
+                "status": "invalid_state",
+                "reason": f"Cannot attach file in state {product.status}",
+            }
+
+        # MUTATION (file binding)
         product.telegram_file_id = file_id
         product.file_type = file_type
 
-        current = product.status
-        target = ProductState.READY.value
+        # STATE TRANSITION (DRAFT -> READY)
+        product.status = ProductStateMachine.mark_ready(product.status)
 
-        if current != target:
-            product.status = ProductStateMachine.mark_ready(current)
-
+        # PERSIST
         await self.uow.session.flush()
 
         return {

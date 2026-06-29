@@ -1,70 +1,54 @@
 # Invoice State Machine
 
+---
+
 # States
 
-* PENDING
-* PAID
-* EXPIRED
-* FAILED
-* REFUNDED
+- PENDING
+- PAID
+- EXPIRED
+- FAILED
+- REFUNDED
 
 ---
 
 # Allowed Transitions
 
-PENDING -> PAID
-
-PENDING -> EXPIRED
-
-PENDING -> FAILED
-
-PAID -> REFUNDED
+PENDING → PAID  
+PENDING → EXPIRED  
+PENDING → FAILED  
+PAID → REFUNDED  
 
 ---
 
 # Forbidden Transitions
 
-PAID -> PENDING
-
-EXPIRED -> PAID
-
-FAILED -> PAID
-
-REFUNDED -> PAID
+PAID → PENDING  
+EXPIRED → PAID  
+FAILED → PAID  
+REFUNDED → PAID  
 
 ---
 
-# Delivery Rules
+# Delivery Rule
 
-Delivery is allowed ONLY when:
+Delivery allowed ONLY when:
 
-* invoice.status == PAID
-* invoice.delivered == False
+- status == PAID
+- delivered == False
 
-After successful delivery:
+After success:
 
-* invoice.delivered = True
-Delivery failures do not affect invoice state transitions.
+- delivered = True
 
-Invoice remains PAID even if delivery is impossible due to missing product content.
+Delivery failure does NOT change invoice state.
+
 ---
 
-# Idempotency Rules
+# Idempotency Constraint
 
 Repeated PAID events MUST NOT:
 
-* duplicate delivery
-* duplicate tx_hash mutation
-* duplicate invoice transition
-
----
-
-# Expiration Rules
-
-Expired invoices cannot become payable again.
-
----
-
-# Provider Rules
-
-Provider webhook normalization MUST happen before state transition.
+- re-trigger delivery
+- mutate tx_hash again
+- re-apply state transitions

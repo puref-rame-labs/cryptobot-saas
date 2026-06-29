@@ -12,6 +12,7 @@ class InvalidProductTransition(ProductStateError):
 class ProductState(str, Enum):
     DRAFT = "DRAFT"
     READY = "READY"
+    PUBLISHED = "PUBLISHED"
 
 
 class ProductStateMachine:
@@ -21,7 +22,8 @@ class ProductStateMachine:
 
     _transitions: dict[ProductState, set[ProductState]] = {
         ProductState.DRAFT: {ProductState.READY},
-        ProductState.READY: set(),
+        ProductState.READY: {ProductState.PUBLISHED},
+        ProductState.PUBLISHED: set(),
     }
 
     @classmethod
@@ -43,7 +45,6 @@ class ProductStateMachine:
 
     @classmethod
     def transition(cls, current: str, target: str) -> str:
-        # idempotent guard
         if current == target:
             return current
 
@@ -55,3 +56,20 @@ class ProductStateMachine:
     @classmethod
     def mark_ready(cls, current: str) -> str:
         return cls.transition(current, ProductState.READY.value)
+
+    @classmethod
+    def mark_published(cls, current: str) -> str:
+        return cls.transition(current, ProductState.PUBLISHED.value)
+
+    @classmethod
+    def can_attach(cls, current: str) -> bool:
+        try:
+            c = ProductState(current)
+        except ValueError:
+            return False
+    
+            # attach разрешён только до публикации
+        return c in {
+            ProductState.DRAFT,
+            ProductState.READY,
+        }

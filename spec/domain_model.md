@@ -1,7 +1,5 @@
 # Domain Model
 
-# Entities
-
 ---
 
 # User
@@ -9,118 +7,109 @@
 Represents Telegram user.
 
 Fields:
-
-* id
-* telegram_id
-* username
+- id
+- telegram_id
+- username
 
 ---
 
 # Product
 
-Represents purchasable digital item.
+Represents digital good.
 
 Fields:
-
-* id
-* title
-* description
-* price
-* currency
-* content
+- id
+- title
+- description
+- price
+- currency
+- telegram_file_id
+- file_type
+- status (DRAFT / READY / PUBLISHED / ARCHIVED)
 
 ---
 
-# Invoice
-
-Main payment aggregate root.
+# Invoice (Aggregate Root)
 
 Fields:
-
-* id
-* user_id
-* product_id
-* amount
-* currency
-* status
-* tx_hash
-* provider
-* external_payment_id
-* delivered
-* created_at
-* expires_at
+- id
+- user_id
+- product_id
+- amount
+- currency
+- status (PENDING / PAID / EXPIRED / FAILED / REFUNDED)
+- tx_hash
+- provider
+- external_payment_id
+- delivered
+- created_at
+- expires_at
 
 ---
 
 # PaymentEvent
 
-Immutable payment event log.
+Immutable webhook event log.
 
 Fields:
-
-* id
-* invoice_id
-* provider
-* event_type
-* payload
-* processed
-* retry_count
-* failed
-* last_error
-* created_at
-* idempotency_key
+- id
+- invoice_id
+- provider
+- event_type
+- payload
+- processed
+- retry_count
+- failed
+- last_error
+- created_at
+- idempotency_key
 
 ---
 
 # Aggregate Rules
 
-Invoice is the payment aggregate root.
+Invoice is the single source of truth for payment state.
 
-All payment state transitions must happen through Invoice.
-
----
-
-# Invoice Invariants
-
-* invoice cannot transition from PAID to PENDING
-* delivered invoice must be PAID
-* external_payment_id must be unique
-* tx_hash may be null before payment
-* invoice delivery must happen at most once
-* state transitions MUST be triggered only via idempotent webhook pipeline
+All payment transitions MUST go through Invoice.
 
 ---
 
-# PaymentEvent Invariants
+# Product Lifecycle
 
-* payment events are append-only
-* raw provider payload must be persisted
-* events must remain auditable
-* idempotency_key must be unique per provider event
+DRAFT → READY → PUBLISHED → ARCHIVED
 
 ---
 
 # Product Invariants
 
-* product price must be positive
-* product currency must exist
-* product content cannot be empty
-* product is considered deliverable only if telegram_file_id is not NULL
+- price > 0
+- currency required
+- telegram_file_id required for delivery
+- product is purchasable ONLY if status == PUBLISHED
+
 ---
 
-# User Invariants
+# Invoice Invariants
 
-* telegram_id must be unique
+- PAID cannot revert to PENDING
+- delivered invoice must be PAID
+- delivery executed at most once
+- external_payment_id must be unique
+- state transitions ONLY via idempotent webhook pipeline
+
 ---
 
-# Product Delivery Rule
+# PaymentEvent Invariants
 
-Delivery system MUST treat product as invalid for delivery if:
+- append-only log
+- raw payload persisted
+- idempotency_key unique per provider event
+- fully auditable system trace
 
-* telegram_file_id is NULL
+---
 
-In this case:
+# Delivery Rule
 
-* delivery MUST NOT be attempted
-* this is NOT a system error
-* this is a domain validation failure
+Delivery MUST NOT be attempted if telegram_file_id is NULL.
+
+This is a validation failure, not a system error.

@@ -1,4 +1,5 @@
 from app.domain.product.state_machine import ProductState
+from app.domain.product.state_machine import ProductStateMachine
 
 
 class PublishProductUseCase:
@@ -13,10 +14,12 @@ class PublishProductUseCase:
         if not product:
             return {"status": "not_found"}
 
-        if product.status == ProductState.READY.value:
-            return {"status": "already_ready", "product": product}
+        # idempotent guard
+        if product.status == ProductState.PUBLISHED.value:
+            return {"status": "already_published", "product": product}
 
-        product.status = ProductState.READY.value
+        # strict transition check
+        product.status = ProductStateMachine.mark_published(product.status)
 
         await self.uow.session.flush()
 

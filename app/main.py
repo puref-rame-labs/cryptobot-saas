@@ -24,7 +24,7 @@ from app.handlers.unknown import router as unknown_router
 from app.infrastructure.database.init_db import init_db
 from app.infrastructure.database.uow import UnitOfWork
 from app.services.product_service import ProductService
-
+from app.handlers.publish import router as publish_router
 from app.workers.invoice_expiry import invoice_expiry_loop
 #from app.workers.payment_event_worker import payment_event_worker
 
@@ -64,8 +64,8 @@ async def main():
     dp.include_router(attach_router)
     dp.include_router(newproduct_router)
     dp.include_router(product_router)
+    dp.include_router(publish_router)
     dp.include_router(unknown_router)
-
     # ---------------------------
     # COMMANDS
     # ---------------------------
@@ -86,6 +86,7 @@ async def main():
                 BotCommand(command="upload", description="Upload digital asset"),
                 BotCommand(command="attach", description="Attach file"),
                 BotCommand(command="newproduct", description="Create product"),
+                BotCommand(command="publish", description="Publish product"),
             ],
             scope=BotCommandScopeChat(chat_id=admin_id),
         )
