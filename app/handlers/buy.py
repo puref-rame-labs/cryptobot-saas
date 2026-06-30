@@ -6,6 +6,7 @@ from app.infrastructure.database.uow import UnitOfWork
 from app.services.product_service import ProductService
 from app.services.user_service import UserService
 from app.services.invoice.use_cases.create_invoice import CreateInvoiceUseCase
+from app.domain.product.policy import ProductPolicy
 
 router = Router()
 
@@ -26,10 +27,17 @@ async def buy_command(message: Message):
             await message.answer("No active products.")
             return
 
-        product = products[0]
+        # FIX: выбираем первый ПРИГОДНЫЙ к покупке товар
+        product = next(
+            (p for p in products if ProductPolicy.can_be_purchased(p.status)),
+            None
+        )
+
+        if not product:
+            await message.answer("No purchasable products.")
+            return
 
         use_case = CreateInvoiceUseCase(uow)
-
         result = await use_case.execute(user, product)
 
     invoice = result["invoice"]
