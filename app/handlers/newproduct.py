@@ -10,8 +10,8 @@ from app.utils.access import is_admin
 
 from app.infrastructure.database.uow import UnitOfWork
 
-from app.services.product_service import ProductService
-from app.services.product.use_cases.attach_file import AttachProductFileUseCase
+from app.application.product_service import ProductService
+from app.application.product.use_cases.attach_file import AttachProductFileUseCase
 
 router = Router()
 

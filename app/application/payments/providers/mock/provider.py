@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from app.services.payments.core.dto.payment_event_dto import (
+from app.application.payments.core.dto.payment_event_dto import (
     PaymentEventDTO,
 )
-from app.services.payments.providers.base import (
+from app.application.payments.providers.base import (
     BasePaymentProvider,
 )
 

@@ -1,4 +1,4 @@
-from app.services.bot_instance import get_bot
+from app.application.bot_instance import get_bot
 from app.infrastructure.database.models import Invoice
 from app.domain.invoice.state_machine import InvoiceState
 

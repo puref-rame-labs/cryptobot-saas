@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 
 from app.infrastructure.database.uow import UnitOfWork
-from app.services.invoice.use_cases.create_invoice import CreateInvoiceUseCase
+from app.application.invoice.use_cases.create_invoice import CreateInvoiceUseCase
 
 router = Router()
 

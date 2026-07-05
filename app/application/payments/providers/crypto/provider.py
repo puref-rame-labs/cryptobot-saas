@@ -1,10 +1,10 @@
 # app/services/payments/providers/crypto/provider.py
 
-from app.services.payments.providers.base import (
+from app.application.payments.providers.base import (
     BasePaymentProvider,
 )
 
-from app.services.payments.core.dto.payment_event_dto import (
+from app.application.payments.core.dto.payment_event_dto import (
     PaymentEventDTO,
 )
 

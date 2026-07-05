@@ -3,9 +3,9 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from app.infrastructure.database.uow import UnitOfWork
-from app.services.product_service import ProductService
-from app.services.user_service import UserService
-from app.services.invoice.use_cases.create_invoice import CreateInvoiceUseCase
+from app.application.product_service import ProductService
+from app.application.user_service import UserService
+from app.application.invoice.use_cases.create_invoice import CreateInvoiceUseCase
 from app.domain.product.policy import ProductPolicy
 
 router = Router()

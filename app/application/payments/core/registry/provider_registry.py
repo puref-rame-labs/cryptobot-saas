@@ -1,6 +1,6 @@
 # app/services/payments/core/registry/provider_registry.py
 
-from app.services.payments.providers.crypto.provider import (
+from app.application.payments.providers.crypto.provider import (
     CryptoProvider,
 )
 

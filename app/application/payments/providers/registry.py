@@ -1,4 +1,4 @@
-from app.services.payments.providers.mock.provider import (
+from app.application.payments.providers.mock.provider import (
     MockPaymentProvider,
 )
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
 
-from app.services.payments.use_cases.handle_webhook import (
+from app.application.payments.use_cases.handle_webhook import (
     handle_webhook,
 )
 

@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from app.services.payments.core.dto.payment_event_dto import (
+from app.application.payments.core.dto.payment_event_dto import (
     PaymentEventDTO,
 )
 

@@ -6,9 +6,9 @@ from sqlalchemy.exc import IntegrityError
 from app.infrastructure.database.uow import UnitOfWork
 from app.infrastructure.database.models import PaymentEvent
 
-from app.services.invoice.use_cases.mark_paid import MarkInvoicePaidUseCase
-from app.services.invoice.use_cases.deliver_invoice import DeliverInvoiceUseCase
-from app.services.delivery.service import DeliveryService
+from app.application.invoice.use_cases.mark_paid import MarkInvoicePaidUseCase
+from app.application.invoice.use_cases.deliver_invoice import DeliverInvoiceUseCase
+from app.application.delivery.service import DeliveryService
 
 
 def build_idempotency_key(provider, external_payment_id, event_type):

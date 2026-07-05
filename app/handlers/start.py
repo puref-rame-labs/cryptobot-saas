@@ -3,7 +3,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 
 from app.infrastructure.database.uow import UnitOfWork
-from app.services.user_service import UserService
+from app.application.user_service import UserService
 
 router = Router()
 

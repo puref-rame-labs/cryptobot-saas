@@ -6,7 +6,7 @@ from aiogram.types import Message
 from app.config.settings import settings
 from app.states.upload_state import UploadStates
 from app.infrastructure.database.uow import UnitOfWork
-from app.services.product.use_cases.attach_file import AttachProductFileUseCase
+from app.application.product.use_cases.attach_file import AttachProductFileUseCase
 
 router = Router()
 

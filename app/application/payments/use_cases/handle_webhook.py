@@ -1,10 +1,10 @@
 from fastapi import HTTPException
 
-from app.services.payments.factory import (
+from app.application.payments.factory import (
     get_payment_provider,
 )
 
-from app.services.payments.use_cases.process_payment_event import (
+from app.application.payments.use_cases.process_payment_event import (
     process_payment_event,
 )
 

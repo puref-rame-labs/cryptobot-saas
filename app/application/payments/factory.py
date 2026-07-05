@@ -1,4 +1,4 @@
-from app.services.payments.providers.registry import (
+from app.application.payments.providers.registry import (
     PROVIDERS,
 )
 
