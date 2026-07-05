@@ -9,19 +9,19 @@ router = APIRouter()
 
 
 class PaymentWebhookSchema(BaseModel):
-    provider: str
     external_payment_id: str
     status: str
     tx_hash: str | None = None
 
 
-@router.post("/payment")
+@router.post("/payment/{provider_name}")
 async def payment_webhook(
+    provider_name: str,
     payload: PaymentWebhookSchema,
     x_webhook_secret: str = Header(),
 ):
-
     return await handle_webhook(
+        provider_name=provider_name,
         payload=payload.model_dump(),
         headers={
             "x-webhook-secret": x_webhook_secret,

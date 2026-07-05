@@ -10,15 +10,10 @@ from app.services.payments.use_cases.process_payment_event import (
 
 
 async def handle_webhook(
+    provider_name: str,
     payload: dict,
     headers: dict,
 ):
-
-    provider_name = payload.get(
-        "provider",
-        "mock",
-    )
-
     payment_provider = get_payment_provider(
         provider_name
     )
@@ -31,7 +26,6 @@ async def handle_webhook(
     )
 
     if not is_valid:
-
         raise HTTPException(
             status_code=403,
             detail="Invalid webhook signature",
