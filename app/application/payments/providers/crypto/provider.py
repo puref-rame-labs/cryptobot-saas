@@ -4,7 +4,7 @@ from app.application.payments.providers.base import (
     BasePaymentProvider,
 )
 
-from app.application.payments.core.dto.payment_event_dto import (
+from app.domain.payment.dto.payment_event_dto import (
     PaymentEventDTO,
 )
 
