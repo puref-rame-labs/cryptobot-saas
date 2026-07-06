@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from app.infrastructure.database.models import Invoice
 from app.application.payments.factory import get_payment_provider
-from app.domain.invoice_status import InvoiceStatus
+from app.domain.invoice.state_machine import InvoiceState as InvoiceStatus
 from app.domain.product.policy import ProductPolicy
 
 

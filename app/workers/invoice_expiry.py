@@ -3,9 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from app.domain.invoice_status import (
-    InvoiceStatus,
-)
+from app.domain.invoice.state_machine import InvoiceState as InvoiceStatus
 
 from app.infrastructure.database.models import (
     Invoice,

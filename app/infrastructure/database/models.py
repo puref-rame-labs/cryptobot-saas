@@ -18,7 +18,7 @@ from sqlalchemy.orm import (
 )
 
 from app.infrastructure.database.base import Base
-from app.domain.invoice_status import InvoiceStatus
+from app.domain.invoice.state_machine import InvoiceState as InvoiceStatus
 
 
 # -------------------------
