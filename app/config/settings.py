@@ -3,7 +3,8 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-BASE_DIR = Path(__file__).resolve().parents[2]  # cryptobot/
+BASE_DIR = Path(__file__).resolve().parents[2]
+
 
 class Settings(BaseSettings):
 
@@ -14,6 +15,8 @@ class Settings(BaseSettings):
     ADMIN_IDS: list[int] = Field(default_factory=list)
 
     WEBHOOK_SECRET: str
+
+    CRYPTOBOT_TOKEN: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
