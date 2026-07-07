@@ -2,6 +2,7 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
+from app.config.settings import settings
 from app.infrastructure.database.uow import UnitOfWork
 from app.application.user_service import UserService
 from app.application.catalog.use_cases.get_catalog import GetCatalogUseCase
@@ -28,7 +29,11 @@ async def buy_command(message: Message):
 
         product = await uow.products.get_by_id(products[0].id)
 
-        result = await CreateInvoiceUseCase(uow).execute(user, product)
+        result = await CreateInvoiceUseCase(uow).execute(
+            user,
+            product,
+            provider_name=settings.DEFAULT_PAYMENT_PROVIDER,
+        )
 
     invoice = result["invoice"]
     payment = result["payment_data"]

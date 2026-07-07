@@ -12,17 +12,16 @@ from app.application.payments.use_cases.process_payment_event import (
 async def handle_webhook(
     provider_name: str,
     payload: dict,
+    raw_body: str,
     headers: dict,
 ):
     payment_provider = get_payment_provider(
         provider_name
     )
 
-    is_valid = await (
-        payment_provider.verify_signature(
-            headers=headers,
-            payload=payload,
-        )
+    is_valid = await payment_provider.verify_signature(
+        headers=headers,
+        payload=raw_body,
     )
 
     if not is_valid:
@@ -31,9 +30,7 @@ async def handle_webhook(
             detail="Invalid webhook signature",
         )
 
-    normalized = await (
-        payment_provider.normalize(payload)
-    )
+    normalized = await payment_provider.normalize(payload)
 
     return await process_payment_event(
         normalized=normalized,

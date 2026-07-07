@@ -11,13 +11,13 @@ from app.config.settings import settings
 
 class CryptoBotProvider(BasePaymentProvider):
 
-    API_URL = "https://pay.crypt.bot/api"
-
+    API_URL = "https://testnet-pay.crypt.bot/api"
+    
     def __init__(self):
         self._token = settings.CRYPTOBOT_TOKEN
 
     async def create_invoice(self, invoice) -> dict:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(proxy="socks5://127.0.0.1:10808") as client:
             response = await client.post(
                 f"{self.API_URL}/createInvoice",
                 headers={"Crypto-Pay-API-Token": self._token},
