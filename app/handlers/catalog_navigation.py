@@ -38,7 +38,10 @@ async def select_category(callback: CallbackQuery):
 
     await callback.message.edit_text(
         "Выберите подкатегорию:",
-        reply_markup=subcategories_kb(subcategories),
+        reply_markup=subcategories_kb(
+            subcategories,
+            back_callback="back_to_categories",
+        ),
     )
     await callback.answer()
 
@@ -51,6 +54,7 @@ async def select_subcategory(callback: CallbackQuery):
         product_groups = await GetProductGroupsUseCase(uow).execute(
             subcategory_id
         )
+        subcategory = await uow.subcategories.get_by_id(subcategory_id)
 
     if not product_groups:
         await callback.answer(EMPTY_MESSAGE, show_alert=True)
@@ -58,7 +62,10 @@ async def select_subcategory(callback: CallbackQuery):
 
     await callback.message.edit_text(
         "Выберите тип товара:",
-        reply_markup=product_groups_kb(product_groups),
+        reply_markup=product_groups_kb(
+            product_groups,
+            back_callback=f"back_to_subcategories:{subcategory.category_id}",
+        ),
     )
     await callback.answer()
 
@@ -69,6 +76,9 @@ async def select_product_group(callback: CallbackQuery):
 
     async with UnitOfWork() as uow:
         brands = await GetBrandsUseCase(uow).execute(product_group_id)
+        product_group = await uow.product_groups.get_by_id(
+            product_group_id
+        )
 
     if not brands:
         await callback.answer(EMPTY_MESSAGE, show_alert=True)
@@ -76,7 +86,12 @@ async def select_product_group(callback: CallbackQuery):
 
     await callback.message.edit_text(
         "Выберите бренд:",
-        reply_markup=brands_kb(brands),
+        reply_markup=brands_kb(
+            brands,
+            back_callback=(
+                f"back_to_product_groups:{product_group.subcategory_id}"
+            ),
+        ),
     )
     await callback.answer()
 
@@ -87,6 +102,7 @@ async def select_brand(callback: CallbackQuery):
 
     async with UnitOfWork() as uow:
         raw_products = await uow.products.get_by_brand_id(brand_id)
+        brand = await uow.brands.get_by_id(brand_id)
 
         items = [
             CatalogItem(
@@ -108,6 +124,82 @@ async def select_brand(callback: CallbackQuery):
 
     await callback.message.edit_text(
         "Выберите товар:",
-        reply_markup=products_kb(products),
+        reply_markup=products_kb(
+            products,
+            back_callback=f"back_to_brands:{brand.product_group_id}",
+        ),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "back_to_categories")
+async def back_to_categories(callback: CallbackQuery):
+    async with UnitOfWork() as uow:
+        categories = await GetCategoriesUseCase(uow).execute()
+
+    await callback.message.edit_text(
+        "Выберите категорию:",
+        reply_markup=categories_kb(categories),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("back_to_subcategories:"))
+async def back_to_subcategories(callback: CallbackQuery):
+    category_id = int(callback.data.split(":")[1])
+
+    async with UnitOfWork() as uow:
+        subcategories = await GetSubcategoriesUseCase(uow).execute(
+            category_id
+        )
+
+    await callback.message.edit_text(
+        "Выберите подкатегорию:",
+        reply_markup=subcategories_kb(
+            subcategories,
+            back_callback="back_to_categories",
+        ),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("back_to_product_groups:"))
+async def back_to_product_groups(callback: CallbackQuery):
+    subcategory_id = int(callback.data.split(":")[1])
+
+    async with UnitOfWork() as uow:
+        product_groups = await GetProductGroupsUseCase(uow).execute(
+            subcategory_id
+        )
+        subcategory = await uow.subcategories.get_by_id(subcategory_id)
+
+    await callback.message.edit_text(
+        "Выберите тип товара:",
+        reply_markup=product_groups_kb(
+            product_groups,
+            back_callback=f"back_to_subcategories:{subcategory.category_id}",
+        ),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("back_to_brands:"))
+async def back_to_brands(callback: CallbackQuery):
+    product_group_id = int(callback.data.split(":")[1])
+
+    async with UnitOfWork() as uow:
+        brands = await GetBrandsUseCase(uow).execute(product_group_id)
+        product_group = await uow.product_groups.get_by_id(
+            product_group_id
+        )
+
+    await callback.message.edit_text(
+        "Выберите бренд:",
+        reply_markup=brands_kb(
+            brands,
+            back_callback=(
+                f"back_to_product_groups:{product_group.subcategory_id}"
+            ),
+        ),
     )
     await callback.answer()

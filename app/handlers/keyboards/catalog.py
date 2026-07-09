@@ -1,7 +1,18 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-def categories_kb(categories):
+def _with_back(buttons, back_callback):
+    if back_callback:
+        buttons.append([
+            InlineKeyboardButton(
+                text="◀️ Назад",
+                callback_data=back_callback,
+            )
+        ])
+    return buttons
+
+
+def categories_kb(categories, back_callback=None):
     buttons = [
         [InlineKeyboardButton(
             text=c.title,
@@ -9,10 +20,12 @@ def categories_kb(categories):
         )]
         for c in categories
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(
+        inline_keyboard=_with_back(buttons, back_callback)
+    )
 
 
-def subcategories_kb(subcategories):
+def subcategories_kb(subcategories, back_callback=None):
     buttons = [
         [InlineKeyboardButton(
             text=s.title,
@@ -20,10 +33,12 @@ def subcategories_kb(subcategories):
         )]
         for s in subcategories
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(
+        inline_keyboard=_with_back(buttons, back_callback)
+    )
 
 
-def product_groups_kb(product_groups):
+def product_groups_kb(product_groups, back_callback=None):
     buttons = [
         [InlineKeyboardButton(
             text=pg.title,
@@ -31,10 +46,12 @@ def product_groups_kb(product_groups):
         )]
         for pg in product_groups
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(
+        inline_keyboard=_with_back(buttons, back_callback)
+    )
 
 
-def brands_kb(brands):
+def brands_kb(brands, back_callback=None):
     buttons = [
         [InlineKeyboardButton(
             text=b.title,
@@ -42,4 +59,6 @@ def brands_kb(brands):
         )]
         for b in brands
     ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(
+        inline_keyboard=_with_back(buttons, back_callback)
+    )
