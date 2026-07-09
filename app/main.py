@@ -14,6 +14,7 @@ from app.config.logging import setup_logging
 
 from app.handlers.start import router as start_router
 from app.handlers.buy import router as buy_router
+from app.handlers.catalog_navigation import router as catalog_navigation_router
 from app.handlers.paytest import router as paytest_router
 from app.handlers.upload import router as upload_router
 from app.handlers.attach import router as attach_router
@@ -52,6 +53,7 @@ async def main():
     dp.include_router(newproduct_router)
     dp.include_router(product_router)
     dp.include_router(publish_router)
+    dp.include_router(catalog_navigation_router)
     dp.include_router(unknown_router)
 
     await bot.set_my_commands(

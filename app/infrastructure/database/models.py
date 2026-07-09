@@ -27,6 +27,7 @@ from app.domain.invoice.state_machine import InvoiceState as InvoiceStatus
 class ProductStatus(str, Enum):
     DRAFT = "DRAFT"
     READY = "READY"
+    PUBLISHED = "PUBLISHED"
 
 
 # -------------------------
@@ -114,8 +115,116 @@ class Product(Base):
         default=ProductStatus.DRAFT.value,
     )
 
+    brand_id: Mapped[int] = mapped_column(
+        ForeignKey("brands.id"),
+        nullable=False,
+    )
+
+    brand: Mapped["Brand"] = relationship(
+        back_populates="products"
+    )
+
     invoices: Mapped[list["Invoice"]] = relationship(
         back_populates="product"
+    )
+
+
+# -------------------------
+# CATEGORY
+# -------------------------
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    title: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+
+    subcategories: Mapped[list["Subcategory"]] = relationship(
+        back_populates="category"
+    )
+
+
+# -------------------------
+# SUBCATEGORY
+# -------------------------
+class Subcategory(Base):
+    __tablename__ = "subcategories"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    title: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id"),
+        nullable=False,
+    )
+
+    category: Mapped["Category"] = relationship(
+        back_populates="subcategories"
+    )
+
+    product_groups: Mapped[list["ProductGroup"]] = relationship(
+        back_populates="subcategory"
+    )
+
+
+# -------------------------
+# PRODUCT GROUP
+# -------------------------
+class ProductGroup(Base):
+    __tablename__ = "product_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    title: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+
+    subcategory_id: Mapped[int] = mapped_column(
+        ForeignKey("subcategories.id"),
+        nullable=False,
+    )
+
+    subcategory: Mapped["Subcategory"] = relationship(
+        back_populates="product_groups"
+    )
+
+    brands: Mapped[list["Brand"]] = relationship(
+        back_populates="product_group"
+    )
+
+
+# -------------------------
+# BRAND
+# -------------------------
+class Brand(Base):
+    __tablename__ = "brands"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    title: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+
+    product_group_id: Mapped[int] = mapped_column(
+        ForeignKey("product_groups.id"),
+        nullable=False,
+    )
+
+    product_group: Mapped["ProductGroup"] = relationship(
+        back_populates="brands"
+    )
+
+    products: Mapped[list["Product"]] = relationship(
+        back_populates="brand"
     )
 
 

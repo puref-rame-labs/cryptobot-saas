@@ -17,4 +17,5 @@ class BootstrapCatalogUseCase:
             description="Development product",
             price=Decimal("5"),
             currency="USDT",
+            brand_id=1,
         )

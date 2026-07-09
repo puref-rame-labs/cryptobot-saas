@@ -31,6 +31,15 @@ class ProductRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_brand_id(self, brand_id: int):
+        stmt = select(Product).where(
+            Product.brand_id == brand_id,
+            Product.is_active.is_(True),
+        )
+
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
     # -------------------------
     # CREATE
     # -------------------------
@@ -40,6 +49,7 @@ class ProductRepository:
         title: str,
         description: str | None,
         price,
+        brand_id: int,
         currency: str = "USDT",
     ) -> Product:
 
@@ -48,6 +58,7 @@ class ProductRepository:
             description=description,
             price=price,
             currency=currency,
+            brand_id=brand_id,
         )
 
         self.session.add(product)
