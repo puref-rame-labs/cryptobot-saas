@@ -13,6 +13,7 @@ class ProductState(str, Enum):
     DRAFT = "DRAFT"
     READY = "READY"
     PUBLISHED = "PUBLISHED"
+    ARCHIVED = "ARCHIVED"
 
 
 class ProductStateMachine:
@@ -23,7 +24,8 @@ class ProductStateMachine:
     _transitions: dict[ProductState, set[ProductState]] = {
         ProductState.DRAFT: {ProductState.READY},
         ProductState.READY: {ProductState.PUBLISHED},
-        ProductState.PUBLISHED: set(),
+        ProductState.PUBLISHED: {ProductState.ARCHIVED},
+        ProductState.ARCHIVED: set(),
     }
 
     @classmethod
@@ -60,6 +62,10 @@ class ProductStateMachine:
     @classmethod
     def mark_published(cls, current: str) -> str:
         return cls.transition(current, ProductState.PUBLISHED.value)
+
+    @classmethod
+    def mark_archived(cls, current: str) -> str:
+        return cls.transition(current, ProductState.ARCHIVED.value)
 
     @classmethod
     def can_attach(cls, current: str) -> bool:

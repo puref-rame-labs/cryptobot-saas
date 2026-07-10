@@ -28,6 +28,7 @@ class ProductStatus(str, Enum):
     DRAFT = "DRAFT"
     READY = "READY"
     PUBLISHED = "PUBLISHED"
+    ARCHIVED = "ARCHIVED"
 
 
 # -------------------------
