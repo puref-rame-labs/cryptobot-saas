@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 
+from app.config.settings import settings
 from app.infrastructure.database.uow import UnitOfWork
 from app.application.invoice.use_cases.create_invoice import CreateInvoiceUseCase
 
@@ -23,8 +24,11 @@ async def select_product(callback: CallbackQuery):
         user = callback.from_user
 
         use_case = CreateInvoiceUseCase(uow)
-
-        result = await use_case.execute(user, product)
+        result = await use_case.execute(
+            user,
+            product,
+            provider_name=settings.DEFAULT_PAYMENT_PROVIDER,
+        )
 
         invoice = result["invoice"]
         payment = result["payment_data"]
@@ -32,7 +36,8 @@ async def select_product(callback: CallbackQuery):
         await callback.message.answer(
             f"Invoice #{invoice.id} created\n"
             f"Amount: {invoice.amount} {invoice.currency}\n"
-            f"Status: {invoice.status}"
+            f"Status: {invoice.status}\n\n"
+            f"{payment.payment_url}"
         )
 
     await callback.answer()
