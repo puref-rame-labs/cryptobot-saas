@@ -63,3 +63,22 @@ class InvoiceRepository:
         result = await self.session.execute(stmt)
 
         return result.scalar_one_or_none()
+
+    async def get_active_by_user_and_product(
+        self,
+        user_id: int,
+        product_id: int,
+    ):
+
+        stmt = (
+            select(Invoice)
+            .where(
+                Invoice.user_id == user_id,
+                Invoice.product_id == product_id,
+                Invoice.status == "PENDING",
+            )
+        )
+
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one_or_none()

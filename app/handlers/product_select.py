@@ -3,6 +3,7 @@ from aiogram.types import CallbackQuery
 
 from app.config.settings import settings
 from app.infrastructure.database.uow import UnitOfWork
+from app.application.user_service import UserService
 from app.application.invoice.use_cases.create_invoice import CreateInvoiceUseCase
 
 router = Router()
@@ -21,7 +22,10 @@ async def select_product(callback: CallbackQuery):
             await callback.answer("Product not found", show_alert=True)
             return
 
-        user = callback.from_user
+        user = await UserService(uow).register_user(
+            telegram_id=callback.from_user.id,
+            username=callback.from_user.username,
+        )
 
         use_case = CreateInvoiceUseCase(uow)
         result = await use_case.execute(
