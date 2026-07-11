@@ -34,7 +34,7 @@ class InvoiceStateMachine:
         },
         InvoiceState.DELIVERED: set(),
         InvoiceState.FAILED: set(),
-        InvoiceState.EXPIRED: set(),
+        InvoiceState.EXPIRED: {InvoiceState.PAID},
     }
 
     @classmethod

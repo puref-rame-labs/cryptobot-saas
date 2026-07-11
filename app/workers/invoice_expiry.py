@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
@@ -13,24 +13,27 @@ from app.infrastructure.database.uow import (
     UnitOfWork,
 )
 
+GRACE_PERIOD = timedelta(minutes=5)
+
 
 async def invoice_expiry_loop():
     try:
         while True:
             async with UnitOfWork() as uow:
 
+                now = datetime.utcnow()
+                cutoff = now - GRACE_PERIOD
+
                 stmt = select(Invoice).where(
-                    Invoice.status == InvoiceStatus.PENDING
+                    Invoice.status == InvoiceStatus.PENDING,
+                    Invoice.expires_at < cutoff,
                 )
 
                 result = await uow.session.execute(stmt)
                 invoices = result.scalars().all()
 
-                now = datetime.utcnow()
-
                 for invoice in invoices:
-                    if invoice.expires_at < now:
-                        invoice.status = InvoiceStatus.EXPIRED
+                    invoice.status = InvoiceStatus.EXPIRED
 
                 await uow.session.commit()
 
