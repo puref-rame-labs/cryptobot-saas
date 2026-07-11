@@ -23,7 +23,20 @@ class CreateInvoiceUseCase:
         if not product.telegram_file_id:
             raise ValueError("Product not deliverable")
 
-        # 2. ENTITY BUILD
+        # 2. DUPLICATE INVOICE GUARD (DDoS / spam mitigation)
+        existing = await self.uow.invoices.get_active_by_user_and_product(
+            user_id=user.id,
+            product_id=product.id,
+        )
+
+        if existing:
+            return {
+                "invoice": existing,
+                "payment_data": None,
+                "payment_url": existing.payment_url,
+            }
+
+        # 3. ENTITY BUILD
         invoice = Invoice(
             user_id=user.id,
             product_id=product.id,
@@ -34,19 +47,21 @@ class CreateInvoiceUseCase:
             expires_at=datetime.utcnow() + timedelta(minutes=15),
         )
 
-        # 3. PERSIST
+        # 4. PERSIST
         self.uow.invoices.session.add(invoice)
         await self.uow.session.flush()
 
-        # 4. PAYMENT PROVIDER
+        # 5. PAYMENT PROVIDER
         provider = get_payment_provider(provider_name)
         payment_data = await provider.create_invoice(invoice)
 
-        # 5. UPDATE ENTITY
+        # 6. UPDATE ENTITY
         invoice.external_payment_id = str(payment_data.external_id)
+        invoice.payment_url = payment_data.payment_url
         await self.uow.session.flush()
 
         return {
             "invoice": invoice,
             "payment_data": payment_data,
+            "payment_url": invoice.payment_url,
         }

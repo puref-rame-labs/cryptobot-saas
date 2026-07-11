@@ -280,6 +280,11 @@ class Invoice(Base):
         nullable=True,
     )
 
+    payment_url: Mapped[str | None] = mapped_column(
+        String(1024),
+        nullable=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,

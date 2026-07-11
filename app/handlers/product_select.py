@@ -35,13 +35,13 @@ async def select_product(callback: CallbackQuery):
         )
 
         invoice = result["invoice"]
-        payment = result["payment_data"]
+        payment_url = result["payment_url"]
 
         await callback.message.answer(
             f"Invoice #{invoice.id} created\n"
             f"Amount: {invoice.amount} {invoice.currency}\n"
             f"Status: {invoice.status}\n\n"
-            f"{payment.payment_url}"
+            f"{payment_url}"
         )
 
     await callback.answer()
