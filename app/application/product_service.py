@@ -15,7 +15,7 @@ class ProductService:
         description: str | None,
         price: Decimal,
         brand_id: int,
-        currency: str = "USDT",
+        currency: str = "RUB",
     ):
         return await self.uow.products.create_product(
             title=title,

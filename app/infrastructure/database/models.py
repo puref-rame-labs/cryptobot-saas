@@ -86,7 +86,7 @@ class Product(Base):
     currency: Mapped[str] = mapped_column(
         String(16),
         nullable=False,
-        default="USDT",
+        default="RUB",
     )
 
     is_active: Mapped[bool] = mapped_column(
@@ -282,6 +282,21 @@ class Invoice(Base):
 
     payment_url: Mapped[str | None] = mapped_column(
         String(1024),
+        nullable=True,
+    )
+
+    paid_asset: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+
+    paid_amount: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True,
+    )
+
+    paid_fiat_rate: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
         nullable=True,
     )
 

@@ -53,7 +53,13 @@ async def process_payment_event(normalized, provider_name: str):
 
             # 3. DOMAIN STEP: MARK PAID
             paid_uc = MarkInvoicePaidUseCase(uow)
-            ok = await paid_uc.execute(invoice, normalized.tx_hash)
+            ok = await paid_uc.execute(
+                invoice,
+                normalized.tx_hash,
+                paid_asset=normalized.paid_asset,
+                paid_amount=normalized.paid_amount,
+                paid_fiat_rate=normalized.paid_fiat_rate,
+            )
 
             if not ok:
                 event.failed = True

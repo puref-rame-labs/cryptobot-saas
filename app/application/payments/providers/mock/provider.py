@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from decimal import Decimal
 
 from app.domain.payment.dto.payment_event_dto import (
     PaymentEventDTO,
@@ -6,6 +7,9 @@ from app.domain.payment.dto.payment_event_dto import (
 from app.application.payments.providers.base import (
     BasePaymentProvider,
 )
+
+# Test-only fixed rate, no external calls.
+TEST_RUB_TO_USDT_RATE = Decimal("90")
 
 
 @dataclass
@@ -38,10 +42,20 @@ class MockPaymentProvider(BasePaymentProvider):
         payload: dict,
     ) -> PaymentEventDTO:
 
+        fiat_amount = Decimal(str(payload.get("fiat_amount", "0")))
+        paid_amount = (
+            fiat_amount / TEST_RUB_TO_USDT_RATE
+            if fiat_amount
+            else None
+        )
+
         return PaymentEventDTO(
             external_payment_id=payload[
                 "external_payment_id"
             ],
             tx_hash=payload.get("tx_hash"),
             status=payload["status"],
+            paid_asset="USDT",
+            paid_amount=paid_amount,
+            paid_fiat_rate=TEST_RUB_TO_USDT_RATE,
         )

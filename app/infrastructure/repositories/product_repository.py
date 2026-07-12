@@ -50,7 +50,7 @@ class ProductRepository:
         description: str | None,
         price,
         brand_id: int,
-        currency: str = "USDT",
+        currency: str = "RUB",
     ) -> Product:
 
         product = Product(

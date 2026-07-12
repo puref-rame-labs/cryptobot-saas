@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+from decimal import Decimal
 
 import httpx
 
@@ -12,7 +13,7 @@ from app.config.settings import settings
 class CryptoBotProvider(BasePaymentProvider):
 
     API_URL = "https://testnet-pay.crypt.bot/api"
-    
+
     def __init__(self):
         self._token = settings.CRYPTOBOT_TOKEN
 
@@ -22,7 +23,8 @@ class CryptoBotProvider(BasePaymentProvider):
                 f"{self.API_URL}/createInvoice",
                 headers={"Crypto-Pay-API-Token": self._token},
                 json={
-                    "asset": invoice.currency,
+                    "currency_type": "fiat",
+                    "fiat": invoice.currency,
                     "amount": str(invoice.amount),
                     "description": f"Invoice #{invoice.id}",
                     "expires_in": 900,
@@ -61,8 +63,15 @@ class CryptoBotProvider(BasePaymentProvider):
     async def normalize(self, payload: dict) -> PaymentEventDTO:
         invoice = payload.get("payload", payload)
 
+        paid_asset = invoice.get("paid_asset")
+        paid_amount = invoice.get("paid_amount")
+        paid_fiat_rate = invoice.get("paid_fiat_rate")
+
         return PaymentEventDTO(
             external_payment_id=str(invoice["invoice_id"]),
             status="paid" if payload.get("update_type") == "invoice_paid" else invoice.get("status", "unknown"),
             tx_hash=None,
+            paid_asset=paid_asset,
+            paid_amount=Decimal(str(paid_amount)) if paid_amount else None,
+            paid_fiat_rate=Decimal(str(paid_fiat_rate)) if paid_fiat_rate else None,
         )

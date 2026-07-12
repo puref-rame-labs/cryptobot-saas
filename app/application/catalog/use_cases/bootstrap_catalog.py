@@ -15,7 +15,7 @@ class BootstrapCatalogUseCase:
         await self.uow.products.create_product(
             title="Test Product",
             description="Development product",
-            price=Decimal("5"),
-            currency="USDT",
+            price=Decimal("500"),
+            currency="RUB",
             brand_id=1,
         )
