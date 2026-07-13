@@ -275,6 +275,13 @@ class Invoice(Base):
         nullable=True,
     )
 
+    network: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        default="mainnet",
+        server_default="mainnet",
+    )
+
     external_payment_id: Mapped[str | None] = mapped_column(
         String(256),
         nullable=True,
