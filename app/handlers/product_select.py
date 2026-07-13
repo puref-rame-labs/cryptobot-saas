@@ -27,11 +27,15 @@ async def select_product(callback: CallbackQuery):
             username=callback.from_user.username,
         )
 
+        is_admin = callback.from_user.id in settings.ADMIN_IDS
+        network = "testnet" if (is_admin and user.testnet_override) else "mainnet"
+
         use_case = CreateInvoiceUseCase(uow)
         result = await use_case.execute(
             user,
             product,
             provider_name=settings.DEFAULT_PAYMENT_PROVIDER,
+            network=network,
         )
 
         invoice = result["invoice"]

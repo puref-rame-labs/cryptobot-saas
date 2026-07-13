@@ -20,6 +20,7 @@ from app.handlers.upload import router as upload_router
 from app.handlers.attach import router as attach_router
 from app.handlers.newproduct import router as newproduct_router
 from app.handlers.product_select import router as product_router
+from app.handlers.testmode import router as testmode_router
 from app.handlers.unknown import router as unknown_router
 from app.handlers.publish import router as publish_router
 
@@ -52,6 +53,7 @@ async def main():
     dp.include_router(attach_router)
     dp.include_router(newproduct_router)
     dp.include_router(product_router)
+    dp.include_router(testmode_router)
     dp.include_router(publish_router)
     dp.include_router(catalog_navigation_router)
     dp.include_router(unknown_router)
@@ -74,6 +76,7 @@ async def main():
                 BotCommand(command="attach", description="Attach file"),
                 BotCommand(command="newproduct", description="Create product"),
                 BotCommand(command="publish", description="Publish product"),
+                BotCommand(command="testmode", description="Toggle testnet payments"),
             ],
             scope=BotCommandScopeChat(chat_id=admin_id),
         )
