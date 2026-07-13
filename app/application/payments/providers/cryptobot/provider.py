@@ -12,10 +12,19 @@ from app.config.settings import settings
 
 class CryptoBotProvider(BasePaymentProvider):
 
-    API_URL = "https://testnet-pay.crypt.bot/api"
+    def __init__(self, network: str = "mainnet"):
+        self._network = network
 
-    def __init__(self):
-        self._token = settings.CRYPTOBOT_TOKEN
+        if network == "mainnet":
+            self._token = settings.CRYPTOBOT_MAINNET_TOKEN
+            host = settings.CRYPTOBOT_MAINNET_HOST
+        elif network == "testnet":
+            self._token = settings.CRYPTOBOT_TESTNET_TOKEN
+            host = settings.CRYPTOBOT_TESTNET_HOST
+        else:
+            raise ValueError(f"Unknown network: {network}")
+
+        self.API_URL = f"https://{host}/api"
 
     async def create_invoice(self, invoice) -> dict:
         async with httpx.AsyncClient(proxy="socks5://127.0.0.1:10808") as client:

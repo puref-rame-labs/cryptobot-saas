@@ -68,6 +68,7 @@ class InvoiceRepository:
         self,
         user_id: int,
         product_id: int,
+        network: str,
     ):
 
         stmt = (
@@ -75,6 +76,7 @@ class InvoiceRepository:
             .where(
                 Invoice.user_id == user_id,
                 Invoice.product_id == product_id,
+                Invoice.network == network,
                 Invoice.status == "PENDING",
             )
         )

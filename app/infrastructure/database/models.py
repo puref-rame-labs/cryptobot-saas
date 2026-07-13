@@ -50,6 +50,12 @@ class User(Base):
         nullable=True,
     )
 
+    testnet_override: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default="0",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,

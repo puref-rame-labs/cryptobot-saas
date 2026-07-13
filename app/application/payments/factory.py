@@ -5,6 +5,7 @@ from app.application.payments.providers.registry import (
 
 def get_payment_provider(
     provider_name: str,
+    network: str = "mainnet",
 ):
 
     provider_class = PROVIDERS.get(
@@ -17,4 +18,4 @@ def get_payment_provider(
             f"Unknown provider: {provider_name}"
         )
 
-    return provider_class()
+    return provider_class(network=network)

@@ -20,6 +20,9 @@ class MockInvoiceResponse:
 
 class MockPaymentProvider(BasePaymentProvider):
 
+    def __init__(self, network: str = "mainnet"):
+        self._network = network
+
     async def create_invoice(self, invoice):
 
         return MockInvoiceResponse(

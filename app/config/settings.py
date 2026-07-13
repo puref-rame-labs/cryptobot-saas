@@ -16,7 +16,11 @@ class Settings(BaseSettings):
 
     WEBHOOK_SECRET: str
 
-    CRYPTOBOT_TOKEN: str = ""
+    CRYPTOBOT_MAINNET_TOKEN: str = ""
+    CRYPTOBOT_MAINNET_HOST: str = "pay.crypt.bot"
+
+    CRYPTOBOT_TESTNET_TOKEN: str = ""
+    CRYPTOBOT_TESTNET_HOST: str = "testnet-pay.crypt.bot"
 
     DEFAULT_PAYMENT_PROVIDER: str = "mock"
 
