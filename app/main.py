@@ -62,9 +62,9 @@ async def main():
 
     await bot.set_my_commands(
         [
-            BotCommand(command="start", description="Start bot"),
-            BotCommand(command="buy", description="Create invoice"),
-            BotCommand(command="help", description="How to top up balance"),
+            BotCommand(command="start", description="Запустить бота"),
+            BotCommand(command="buy", description="Оформить покупку"),
+            BotCommand(command="help", description="Как пополнить баланс"),
         ],
         scope=BotCommandScopeDefault(),
     )
@@ -72,14 +72,14 @@ async def main():
     for admin_id in settings.ADMIN_IDS:
         await bot.set_my_commands(
             [
-                BotCommand(command="start", description="Start bot"),
-                BotCommand(command="buy", description="Create invoice"),
-                BotCommand(command="paytest", description="Simulate payment"),
-                BotCommand(command="upload", description="Upload digital asset"),
-                BotCommand(command="attach", description="Attach file"),
-                BotCommand(command="newproduct", description="Create product"),
-                BotCommand(command="publish", description="Publish product"),
-                BotCommand(command="testmode", description="Toggle testnet payments"),
+                BotCommand(command="start", description="Запустить бота"),
+                BotCommand(command="buy", description="Оформить покупку"),
+                BotCommand(command="paytest", description="Тест оплаты"),
+                BotCommand(command="upload", description="Загрузить файл товара"),
+                BotCommand(command="attach", description="Прикрепить файл"),
+                BotCommand(command="newproduct", description="Создать товар"),
+                BotCommand(command="publish", description="Опубликовать товар"),
+                BotCommand(command="testmode", description="Переключить testnet"),
             ],
             scope=BotCommandScopeChat(chat_id=admin_id),
         )
