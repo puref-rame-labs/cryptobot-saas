@@ -20,5 +20,7 @@ async def start_command(message: Message):
         )
 
     await message.answer(
-        f"Welcome, user #{user.id}"
+        f"Welcome, user #{user.id}\n\n"
+        f"Используйте /buy, чтобы посмотреть каталог.\n"
+        f"Если нужно пополнить баланс для оплаты — команда /help."
     )
