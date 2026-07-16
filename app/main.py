@@ -16,7 +16,6 @@ from app.handlers.start import router as start_router
 from app.handlers.buy import router as buy_router
 from app.handlers.catalog_navigation import router as catalog_navigation_router
 from app.handlers.paytest import router as paytest_router
-from app.handlers.upload import router as upload_router
 from app.handlers.attach import router as attach_router
 from app.handlers.newproduct import router as newproduct_router
 from app.handlers.product_select import router as product_router
@@ -50,7 +49,6 @@ async def main():
     dp.include_router(start_router)
     dp.include_router(buy_router)
     dp.include_router(paytest_router)
-    dp.include_router(upload_router)
     dp.include_router(attach_router)
     dp.include_router(newproduct_router)
     dp.include_router(product_router)
@@ -75,7 +73,6 @@ async def main():
                 BotCommand(command="start", description="Запустить бота"),
                 BotCommand(command="buy", description="Оформить покупку"),
                 BotCommand(command="paytest", description="Тест оплаты"),
-                BotCommand(command="upload", description="Загрузить файл товара"),
                 BotCommand(command="attach", description="Прикрепить файл"),
                 BotCommand(command="newproduct", description="Создать товар"),
                 BotCommand(command="publish", description="Опубликовать товар"),

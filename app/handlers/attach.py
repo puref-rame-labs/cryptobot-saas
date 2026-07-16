@@ -18,13 +18,13 @@ router = Router()
 async def attach_command(message: Message, state: FSMContext):
 
     if message.from_user.id not in settings.ADMIN_IDS:
-        await message.answer("Access denied")
+        await message.answer("Доступ запрещён")
         return
 
     parts = message.text.split()
 
     if len(parts) != 2:
-        await message.answer("Usage: /attach <product_id>")
+        await message.answer("Использование: /attach <product_id>")
         return
 
     product_id = int(parts[1])
@@ -32,7 +32,7 @@ async def attach_command(message: Message, state: FSMContext):
     await state.update_data(product_id=product_id)
     await state.set_state(UploadStates.waiting_for_file)
 
-    await message.answer("Send file for product")
+    await message.answer("Отправьте файл для товара")
 
 
 # -------------------------
@@ -40,15 +40,11 @@ async def attach_command(message: Message, state: FSMContext):
 # -------------------------
 @router.message(UploadStates.waiting_for_file)
 async def handle_file_upload(message: Message, state: FSMContext):
-    print("1) FSM HIT attach handler")
-
     data = await state.get_data()
     product_id = data.get("product_id")
-    print("2) FSM DATA:", data)
-    print("2) PRODUCT ID:", product_id)
 
     if not product_id:
-        await message.answer("Missing product context")
+        await message.answer("Не найден контекст товара")
         return
 
     file_id = None
@@ -63,13 +59,10 @@ async def handle_file_upload(message: Message, state: FSMContext):
         file_type = "document"
 
     else:
-        await message.answer("Unsupported file type")
+        await message.answer("Неподдерживаемый тип файла")
         return
 
     async with UnitOfWork() as uow:
-        print("3) BEFORE USE CASE")
-        print("3) file_id:", file_id)
-        print("3) file_type:", file_type)
         
         result = await AttachProductFileUseCase(uow).execute(
             product_id=product_id,
@@ -78,20 +71,17 @@ async def handle_file_upload(message: Message, state: FSMContext):
         )
 
         if result["status"] != "ok":
-            await message.answer(f"Attach failed: {result.get('reason', 'unknown')}")
+            await message.answer(f"Ошибка прикрепления: {result.get('reason', 'unknown')}")
             return
 
         await uow.session.flush()
-        print("8) AFTER USE CASE RETURNED")
-        print("product_id:", product_id)
-        print("final product.status:", product.status)
 
     await state.clear()
 
     product = result["product"]
 
     await message.answer(
-        f"Product attached\n"
+        f"Файл прикреплён к товару\n"
         f"ID: {product.id}\n"
-        f"Status: {product.status}"
+        f"Статус: {product.status}"
     )
