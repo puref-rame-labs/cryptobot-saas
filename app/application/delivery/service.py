@@ -30,7 +30,7 @@ class DeliveryService:
             return DeliveryResult(success=False, reason="missing_file")
 
         try:
-            caption = f"Your product: {product.title}"
+            caption = f"Ваш товар: {product.title}"
 
             if product.file_type == "photo":
                 await self.bot.send_photo(

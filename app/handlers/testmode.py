@@ -18,7 +18,7 @@ async def testmode_command(message: Message, command: CommandObject):
         user = await uow.users.get_by_telegram_id(message.from_user.id)
 
         if not user:
-            await message.answer("User not found. Send /start first.")
+            await message.answer("Пользователь не найден. Сначала отправьте /start.")
             return
 
         if arg == "on":
@@ -26,14 +26,14 @@ async def testmode_command(message: Message, command: CommandObject):
         elif arg == "off":
             user.testnet_override = False
         elif arg == "":
-            status = "ON (testnet)" if user.testnet_override else "OFF (mainnet)"
-            await message.answer(f"Testmode is currently: {status}")
+            status = "включён (testnet)" if user.testnet_override else "выключен (mainnet)"
+            await message.answer(f"Тестовый режим сейчас: {status}")
             return
         else:
-            await message.answer("Usage: /testmode on | off")
+            await message.answer("Использование: /testmode on | off")
             return
 
         await uow.session.flush()
 
-    status = "ON — your next purchases will use testnet" if user.testnet_override else "OFF — your next purchases will use mainnet"
-    await message.answer(f"Testmode: {status}")
+    status = "включён — следующие покупки пойдут через testnet" if user.testnet_override else "выключен — следующие покупки пойдут через mainnet"
+    await message.answer(f"Тестовый режим: {status}")

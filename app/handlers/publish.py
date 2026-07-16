@@ -13,17 +13,17 @@ router = Router()
 async def publish_product(message: Message, command: CommandObject):
 
     if message.from_user.id not in settings.ADMIN_IDS:
-        await message.answer("Access denied")
+        await message.answer("Доступ запрещён")
         return
 
     if not command.args:
-        await message.answer("Usage: /publish <product_id>")
+        await message.answer("Использование: /publish <product_id>")
         return
 
     try:
         product_id = int(command.args)
     except ValueError:
-        await message.answer("Invalid product_id")
+        await message.answer("Некорректный product_id")
         return
 
     async with UnitOfWork() as uow:
@@ -31,15 +31,15 @@ async def publish_product(message: Message, command: CommandObject):
         product = await uow.products.get_by_id(product_id)
 
         if not product:
-            await message.answer("Product not found")
+            await message.answer("Товар не найден")
             return
 
         if product.status != ProductState.READY.value:
-            await message.answer(f"Cannot publish from {product.status}")
+            await message.answer(f"Нельзя опубликовать из статуса {product.status}")
             return
 
         product.status = ProductStateMachine.mark_published(product.status)
 
         await uow.session.flush()
 
-    await message.answer(f"Product {product_id} published")
+    await message.answer(f"Товар {product_id} опубликован")

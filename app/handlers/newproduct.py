@@ -31,7 +31,7 @@ router = Router()
 async def newproduct_command(message: Message, state: FSMContext):
 
     if not is_admin(message.from_user.id):
-        await message.answer("Access denied")
+        await message.answer("Доступ запрещён")
         return
 
     async with UnitOfWork() as uow:
@@ -150,7 +150,7 @@ async def newproduct_brand_handler(
     await state.update_data(brand_id=brand_id)
     await state.set_state(ProductStates.waiting_for_title)
 
-    await callback.message.edit_text("Send product title")
+    await callback.message.edit_text("Отправьте название товара")
     await callback.answer()
 
 
@@ -160,7 +160,7 @@ async def product_title_handler(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await state.set_state(ProductStates.waiting_for_description)
 
-    await message.answer("Send description")
+    await message.answer("Отправьте описание")
 
 
 @router.message(ProductStates.waiting_for_description)
@@ -169,7 +169,7 @@ async def product_description_handler(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await state.set_state(ProductStates.waiting_for_price)
 
-    await message.answer("Send price")
+    await message.answer("Отправьте цену")
 
 
 @router.message(ProductStates.waiting_for_price)
@@ -178,13 +178,13 @@ async def product_price_handler(message: Message, state: FSMContext):
     try:
         price = Decimal(message.text)
     except Exception:
-        await message.answer("Invalid price")
+        await message.answer("Некорректная цена")
         return
 
     await state.update_data(price=str(price))
     await state.set_state(ProductStates.waiting_for_currency)
 
-    await message.answer("Send currency")
+    await message.answer("Отправьте валюту")
 
 
 @router.message(ProductStates.waiting_for_currency)
@@ -193,7 +193,7 @@ async def product_currency_handler(message: Message, state: FSMContext):
     await state.update_data(currency=message.text.upper())
     await state.set_state(ProductStates.waiting_for_file)
 
-    await message.answer("Send product file or image")
+    await message.answer("Отправьте файл или изображение товара")
 
 
 @router.message(ProductStates.waiting_for_file)
@@ -211,7 +211,7 @@ async def product_file_handler(message: Message, state: FSMContext):
         file_type = "photo"
 
     else:
-        await message.answer("Send document or photo")
+        await message.answer("Отправьте документ или фото")
         return
 
     data = await state.get_data()
@@ -238,8 +238,8 @@ async def product_file_handler(message: Message, state: FSMContext):
     await state.clear()
 
     await message.answer(
-        f"Product created\n"
+        f"Товар создан\n"
         f"ID: {product.id}\n"
-        f"Title: {product.title}\n"
-        f"Price: {product.price} {product.currency}"
+        f"Название: {product.title}\n"
+        f"Цена: {product.price} {product.currency}"
     )

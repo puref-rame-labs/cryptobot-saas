@@ -8,6 +8,14 @@ from app.application.invoice.use_cases.create_invoice import CreateInvoiceUseCas
 
 router = Router()
 
+STATUS_LABELS_RU = {
+    "PENDING": "Ожидает оплаты",
+    "PAID": "Оплачен",
+    "EXPIRED": "Истёк",
+    "FAILED": "Ошибка оплаты",
+    "DELIVERED": "Доставлен",
+}
+
 
 @router.callback_query(F.data.startswith("product:"))
 async def select_product(callback: CallbackQuery):
@@ -19,7 +27,7 @@ async def select_product(callback: CallbackQuery):
         product = await uow.products.get_by_id(product_id)
 
         if not product:
-            await callback.answer("Product not found", show_alert=True)
+            await callback.answer("Товар не найден", show_alert=True)
             return
 
         user = await UserService(uow).register_user(
@@ -41,10 +49,12 @@ async def select_product(callback: CallbackQuery):
         invoice = result["invoice"]
         payment_url = result["payment_url"]
 
+        status_ru = STATUS_LABELS_RU.get(invoice.status, invoice.status)
+
         await callback.message.answer(
-            f"Invoice #{invoice.id} created\n"
-            f"Amount: {invoice.amount} {invoice.currency}\n"
-            f"Status: {invoice.status}\n\n"
+            f"Заказ #{invoice.id} создан\n"
+            f"Сумма: {invoice.amount} {invoice.currency}\n"
+            f"Статус: {status_ru}\n\n"
             f"{payment_url}"
         )
 
