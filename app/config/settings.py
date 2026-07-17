@@ -24,6 +24,8 @@ class Settings(BaseSettings):
 
     DEFAULT_PAYMENT_PROVIDER: str = "mock"
 
+    CRYPTOBOT_PROXY: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",

@@ -27,7 +27,8 @@ class CryptoBotProvider(BasePaymentProvider):
         self.API_URL = f"https://{host}/api"
 
     async def create_invoice(self, invoice) -> dict:
-        async with httpx.AsyncClient(proxy="socks5://127.0.0.1:10808") as client:
+        client_kwargs = {"proxy": settings.CRYPTOBOT_PROXY} if settings.CRYPTOBOT_PROXY else {}
+        async with httpx.AsyncClient(**client_kwargs) as client:
             response = await client.post(
                 f"{self.API_URL}/createInvoice",
                 headers={"Crypto-Pay-API-Token": self._token},
