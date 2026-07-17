@@ -23,6 +23,7 @@ from app.handlers.testmode import router as testmode_router
 from app.handlers.help import router as help_router
 from app.handlers.unknown import router as unknown_router
 from app.handlers.publish import router as publish_router
+from app.handlers.archive import router as archive_router
 
 from app.infrastructure.database.init_db import init_db
 from app.infrastructure.database.uow import UnitOfWork
@@ -55,6 +56,7 @@ async def main():
     dp.include_router(testmode_router)
     dp.include_router(help_router)
     dp.include_router(publish_router)
+    dp.include_router(archive_router)
     dp.include_router(catalog_navigation_router)
     dp.include_router(unknown_router)
 
@@ -76,6 +78,7 @@ async def main():
                 BotCommand(command="attach", description="Прикрепить файл"),
                 BotCommand(command="newproduct", description="Создать товар"),
                 BotCommand(command="publish", description="Опубликовать товар"),
+                BotCommand(command="archive", description="Архивировать товар"),
                 BotCommand(command="testmode", description="Переключить testnet"),
             ],
             scope=BotCommandScopeChat(chat_id=admin_id),
