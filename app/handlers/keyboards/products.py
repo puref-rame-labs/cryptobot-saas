@@ -20,4 +20,11 @@ def products_kb(products, back_callback=None):
             )
         ])
 
+    buttons.append([
+        InlineKeyboardButton(
+            text="❌ Отмена",
+            callback_data="cancel_to_start",
+        )
+    ])
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)

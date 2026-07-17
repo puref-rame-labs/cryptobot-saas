@@ -132,6 +132,14 @@ async def select_brand(callback: CallbackQuery):
     await callback.answer()
 
 
+@router.callback_query(F.data == "cancel_to_start")
+async def cancel_to_start(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "Возврат в начало. Используйте /buy, чтобы посмотреть каталог заново."
+    )
+    await callback.answer()
+
+
 @router.callback_query(F.data == "back_to_categories")
 async def back_to_categories(callback: CallbackQuery):
     async with UnitOfWork() as uow:
