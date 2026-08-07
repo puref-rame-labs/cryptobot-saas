@@ -12,14 +12,11 @@ def get_engine():
     if _engine is None:
         url = settings.DATABASE_URL
 
-        # ВАЖНО: достаём файл БЕЗ попытки трактовать как directory
-        raw = url.replace("sqlite+aiosqlite:///", "")
-        db_file = Path(raw)
+        if url.startswith("sqlite+aiosqlite:///"):
+            raw = url.replace("sqlite+aiosqlite:///", "")
+            db_file = Path(raw)
+            db_file.parent.mkdir(parents=True, exist_ok=True)
 
-        print("[DB DEBUG] DB FILE:", db_file)
-
-        # ВАЖНО: создаём директорию файла, а не "data как сущность"
-        db_file.parent.mkdir(parents=True, exist_ok=True)
 
         # используем ОРИГИНАЛЬНЫЙ URL без пересборки
         _engine = create_async_engine(

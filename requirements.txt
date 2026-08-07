@@ -41,3 +41,6 @@ typing_extensions==4.15.0
 uvicorn==0.47.0
 wheel==0.47.0
 yarl==1.23.0
+asyncpg==0.31.0
+pytest==9.1.1
+pytest-asyncio==1.4.0
