@@ -24,9 +24,11 @@ class DeliverInvoiceUseCase:
         )
 
         # 4. DOMAIN MUTATION
+        # invoice_state_machine.md: "Delivery failure does NOT change
+        # invoice state." Invoice stays PAID on failure so delivery can
+        # be safely retried later; only success advances the state.
         if result.success:
             InvoiceOps.mark_delivered(invoice)
             return True
 
-        InvoiceOps.mark_failed(invoice)
         return False

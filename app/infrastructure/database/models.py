@@ -341,9 +341,9 @@ class PaymentEvent(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    invoice_id: Mapped[int] = mapped_column(
+    invoice_id: Mapped[int | None] = mapped_column(
         ForeignKey("invoices.id"),
-        nullable=False,
+        nullable=True,
     )
 
     event_type: Mapped[str] = mapped_column(
