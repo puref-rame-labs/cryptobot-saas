@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = f"sqlite+aiosqlite:///{BASE_DIR}/data/database.db"
 
+    DB_ECHO: bool = False
+
     ADMIN_IDS: list[int] = Field(default_factory=list)
 
     WEBHOOK_SECRET: str

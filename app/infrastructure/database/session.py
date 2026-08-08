@@ -21,7 +21,7 @@ def get_engine():
         # используем ОРИГИНАЛЬНЫЙ URL без пересборки
         _engine = create_async_engine(
             url,
-            echo=True,
+            echo=settings.DB_ECHO,
         )
 
     return _engine
