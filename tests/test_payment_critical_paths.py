@@ -111,3 +111,40 @@ async def test_delivered_invoice_cannot_be_marked_paid_again(seeded_invoice, moc
         )
         assert invoice.status == "DELIVERED", "Статус не должен был измениться"
         await uow.session.rollback()
+
+
+async def test_duplicate_external_payment_id_violates_unique_constraint(seeded_invoice):
+    """
+    domain_model.md Invoice Invariants: "external_payment_id must be unique."
+    Constraint added in migration a7c2e91b4f38 - this test confirms it's
+    actually enforced at the DB level, not just assumed.
+    """
+    from sqlalchemy.exc import IntegrityError
+
+    sessionmaker = get_sessionmaker()
+    session = sessionmaker()
+    try:
+        existing = await session.get(Invoice, seeded_invoice)
+
+        duplicate = Invoice(
+            user_id=existing.user_id,
+            product_id=existing.product_id,
+            amount=existing.amount,
+            currency=existing.currency,
+            status="PENDING",
+            provider=existing.provider,
+            external_payment_id=existing.external_payment_id,
+            expires_at=existing.expires_at,
+        )
+        session.add(duplicate)
+
+        try:
+            await session.commit()
+            assert False, (
+                "Ожидался IntegrityError при дублировании external_payment_id, "
+                "но INSERT прошёл успешно - unique constraint не работает"
+            )
+        except IntegrityError:
+            await session.rollback()
+    finally:
+        await session.close()

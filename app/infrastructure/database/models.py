@@ -291,6 +291,7 @@ class Invoice(Base):
     external_payment_id: Mapped[str | None] = mapped_column(
         String(256),
         nullable=True,
+        unique=True,
     )
 
     payment_url: Mapped[str | None] = mapped_column(
