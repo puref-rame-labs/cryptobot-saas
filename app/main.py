@@ -25,7 +25,6 @@ from app.handlers.unknown import router as unknown_router
 from app.handlers.publish import router as publish_router
 from app.handlers.archive import router as archive_router
 
-from app.infrastructure.database.init_db import init_db
 from app.infrastructure.database.uow import UnitOfWork
 from app.application.catalog.use_cases.bootstrap_catalog import BootstrapCatalogUseCase
 from app.workers.invoice_expiry import invoice_expiry_loop
@@ -41,8 +40,6 @@ async def main():
     bot_instance.bot = bot
     assert bot_instance.bot is not None
     dp = Dispatcher(storage=MemoryStorage())
-
-    await init_db()
 
     async with UnitOfWork() as uow:
         await BootstrapCatalogUseCase(uow).execute()
