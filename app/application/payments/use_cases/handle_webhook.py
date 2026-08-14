@@ -11,6 +11,19 @@ from app.application.payments.use_cases.process_payment_event import (
 from app.infrastructure.database.uow import UnitOfWork
 
 
+def _extract_external_payment_id(provider_name: str, payload: dict) -> str | None:
+    # Payload shape is provider-specific, so extraction must be too.
+    # This runs before verify_signature (see note below), purely to
+    # resolve which network's credentials to use - not a business
+    # decision, just a lookup key.
+    if provider_name == "cryptobot":
+        inner_payload = payload.get("payload", payload)
+        return inner_payload.get("invoice_id")
+    if provider_name == "btcpay":
+        return payload.get("invoiceId")
+    return None
+
+
 async def handle_webhook(
     provider_name: str,
     payload: dict,
@@ -21,8 +34,7 @@ async def handle_webhook(
     # so this does not violate the idempotency gate. We need to know
     # which network the invoice was created on to pick the right
     # provider credentials for verify_signature.
-    inner_payload = payload.get("payload", payload)
-    external_payment_id = inner_payload.get("invoice_id")
+    external_payment_id = _extract_external_payment_id(provider_name, payload)
 
     network = "mainnet"
 

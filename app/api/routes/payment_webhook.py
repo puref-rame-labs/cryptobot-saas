@@ -13,6 +13,7 @@ async def payment_webhook(
     request: Request,
     crypto_pay_api_signature: str = Header(default=""),
     x_webhook_secret: str = Header(default=""),
+    btcpay_sig: str = Header(default=""),
 ):
     raw_body = await request.body()
     payload = await request.json()
@@ -24,5 +25,6 @@ async def payment_webhook(
         headers={
             "crypto-pay-api-signature": crypto_pay_api_signature,
             "x-webhook-secret": x_webhook_secret,
+            "btcpay-sig": btcpay_sig,
         },
     )
