@@ -78,20 +78,34 @@ async def process_payment_event(normalized, provider_name: str):
             await uow.session.commit()
             return {"status": "invalid_transition"}
 
-        # 5. SIDE EFFECT: DELIVERY
-        delivery_service = DeliveryService(uow=uow)
-        deliver_uc = DeliverInvoiceUseCase(delivery_service)
+        # CHECKPOINT COMMIT
+        # invoice_state_machine.md: "Delivery failure does NOT change
+        # invoice state." idempotency.md: "invoice transition" and
+        # "delivery trigger" are separate allowed side effects. Commit
+        # the PAID transition + PaymentEvent now, BEFORE attempting
+        # delivery, so that any failure during delivery - including
+        # infrastructure exceptions, not just a returned False - can
+        # never roll back the payment state or lose the event record.
+        await uow.session.commit()
 
-        ok = await deliver_uc.execute(invoice)
+        # 5. SIDE EFFECT: DELIVERY
+        try:
+            delivery_service = DeliveryService(uow=uow)
+            deliver_uc = DeliverInvoiceUseCase(delivery_service)
+            ok = await deliver_uc.execute(invoice)
+        except Exception as exc:
+            ok = False
+            event.last_error = f"delivery_exception: {exc}"
 
         # 6. FINAL EVENT STATE
         if ok:
             event.processed = True
         else:
             event.failed = True
-            event.last_error = "delivery_failed"
+            if not event.last_error:
+                event.last_error = "delivery_failed"
 
-        # 7. SINGLE COMMIT POINT
+        # 7. FINAL COMMIT
         await uow.session.commit()
 
     return {"status": "accepted"}
