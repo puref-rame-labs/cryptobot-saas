@@ -156,5 +156,5 @@ Already Fixed (for reference, not open)
   paid_fiat_rate populated correctly, PaymentEvent persisted with
   processed=False, failed=True,
   last_error="delivery_exception: Bot is not initialized").
-  No automated regression test yet - recommend adding one alongside
-  test_payment_critical_paths.py before relying on this long-term.
+  Verified by
+  tests/test_payment_critical_paths.py::test_delivery_exception_does_not_roll_back_payment_state.

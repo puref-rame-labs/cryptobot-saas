@@ -10,6 +10,7 @@ from app.application.delivery.service import DeliveryService
 from app.infrastructure.database.session import get_sessionmaker
 from app.infrastructure.database.models import Invoice, PaymentEvent
 from app.infrastructure.database.uow import UnitOfWork
+import app.application.bot_instance as bot_instance
 
 
 def make_normalized(external_payment_id: str):
@@ -146,5 +147,60 @@ async def test_duplicate_external_payment_id_violates_unique_constraint(seeded_i
             )
         except IntegrityError:
             await session.rollback()
+    finally:
+        await session.close()
+
+
+async def test_delivery_exception_does_not_roll_back_payment_state(seeded_invoice_no_file):
+    """
+    Regression test for the UoW checkpoint-commit fix (known_issues.md,
+    "Already Fixed" section). Before the fix, process_payment_event ran
+    PaymentEvent persistence + the PAID transition + delivery inside one
+    UnitOfWork with a single commit. An unhandled exception during
+    delivery (not just DeliverInvoiceUseCase returning False) propagated
+    out of the `async with UnitOfWork()` block, rolling back the WHOLE
+    transaction - losing both the PAID transition and the just-persisted
+    PaymentEvent. Violated invoice_state_machine.md ("Delivery failure
+    does NOT change invoice state") and webhook_idempotency.md ("EVERY
+    webhook event must be stored") simultaneously.
+
+    Reproduces the exact real-world trigger found via live BTCPay testnet
+    testing: bot_instance.bot is None, so DeliveryService(uow=uow) raises
+    RuntimeError("Bot is not initialized") during __init__, before
+    DeliverInvoiceUseCase.execute() even runs.
+    """
+    bot_instance.bot = None  # override autouse mock_bot: simulate uninitialized bot
+
+    normalized = make_normalized("ext-nofile-001")
+
+    result = await process_payment_event(normalized, "cryptobot")
+
+    assert result["status"] == "accepted"
+
+    sessionmaker = get_sessionmaker()
+    session = sessionmaker()
+    try:
+        invoice = await session.get(Invoice, seeded_invoice_no_file)
+        assert invoice.status == "PAID", (
+            "invoice_state_machine.md: delivery failure (even an "
+            "unhandled exception) must NOT roll back the PAID transition. "
+            f"Got status '{invoice.status}'."
+        )
+
+        event = (await session.execute(
+            select(PaymentEvent).where(
+                PaymentEvent.invoice_id == seeded_invoice_no_file
+            )
+        )).scalar_one_or_none()
+        assert event is not None, (
+            "webhook_idempotency.md: 'EVERY webhook event must be stored.' "
+            "The PaymentEvent must survive even when delivery raises."
+        )
+        assert event.processed is False
+        assert event.failed is True
+        assert "delivery_exception" in (event.last_error or ""), (
+            f"Expected last_error to record the delivery exception, "
+            f"got: {event.last_error!r}"
+        )
     finally:
         await session.close()
