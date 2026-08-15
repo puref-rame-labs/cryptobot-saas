@@ -55,6 +55,17 @@ This must be revisited BEFORE BTCPay goes live, not after. Once
 BTCPay is implemented, either gate EXPIRED -> PAID to CryptoBot only,
 or resolve per option (a)/(b) above for both providers.
 
+Live example observed (2026-08-15): during BTCPay end-to-end testnet
+testing, invoice #8 (5000 RUB, rate locked at creation via bitpay
+BTC_RUB) expired while webhook delivery was blocked by a cloudflared
+tunnel connectivity issue (see new Operational Notes entry below).
+When the webhook finally landed, mark_paid.py logged "Late payment
+accepted for invoice 8 (was EXPIRED, now PAID, tx_hash=None)" and
+the invoice was honored at the original locked rate. This is the
+exact real-money scenario this issue warns about — now confirmed
+reproducible in practice, not just theoretical. Reinforces: resolve
+before mainnet.
+
 ---
 
 2. REFUNDED state is entirely absent from the state machine
@@ -158,3 +169,38 @@ Already Fixed (for reference, not open)
   last_error="delivery_exception: Bot is not initialized").
   Verified by
   tests/test_payment_critical_paths.py::test_delivery_exception_does_not_roll_back_payment_state.
+
+
+---
+
+Operational Notes (not spec/code discrepancies, but worth preserving
+across sessions)
+
+cloudflared Quick Tunnel + QUIC unreliable on mobile network
+
+Where
+Termux dev environment, testing BTCPay webhooks via
+`cloudflared tunnel --url http://localhost:8000`.
+
+Symptom
+Tunnel URL resolves and BTCPay UI/API traffic works, but the FastAPI
+webhook route becomes unreachable partway through a session (BTCPay
+webhook deliveries fail with no error code; direct curl to the
+tunnel URL returns HTTP 530). cloudflared logs show repeated
+"Failed to dial a quic connection: timeout" against multiple edge
+IPs, while cloudflared's own precheck reports QUIC (UDP) failing and
+TCP/HTTP2 succeeding, suggesting protocol=http2.
+
+Cause
+cloudflared defaults to QUIC (UDP) for the tunnel connection to
+Cloudflare's edge. UDP appears not to traverse reliably on the
+mobile network used for this VPS/Termux setup, causing intermittent
+or total tunnel failure independent of the local server's health.
+
+Fix
+Force HTTP/2 instead of the default QUIC:
+    cloudflared tunnel --protocol http2 --url http://localhost:8000
+Confirmed stable after switching. If tunnel testing resumes in a
+future session and webhooks silently stop arriving (with the local
+`/health` endpoint still responding fine), check this first before
+assuming an application-level bug.

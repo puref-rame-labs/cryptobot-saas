@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 from decimal import Decimal
 
 import httpx
@@ -8,6 +9,9 @@ import httpx
 from app.application.payments.providers.base import BasePaymentProvider
 from app.domain.payment.dto.payment_event_dto import PaymentEventDTO
 from app.config.settings import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 BTCPAY_EVENT_STATUS_MAP = {
@@ -52,6 +56,11 @@ class BTCPayProvider(BasePaymentProvider):
                     "metadata": {"orderId": str(invoice.id)},
                 },
             )
+            if response.status_code >= 400:
+                logger.error(
+                    "BTCPay create_invoice failed: %s %s",
+                    response.status_code, response.text,
+                )
             response.raise_for_status()
             data = response.json()
 
