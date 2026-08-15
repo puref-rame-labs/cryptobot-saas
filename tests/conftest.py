@@ -4,12 +4,37 @@ from unittest.mock import AsyncMock
 
 import pytest_asyncio
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 import app.infrastructure.database.session as session_module
+from app.config.settings import settings
 from app.infrastructure.database.models import (
     User, Product, Category, Subcategory, ProductGroup, Brand, Invoice,
 )
 import app.application.bot_instance as bot_instance
+
+
+def _require_test_database_url() -> str:
+    """
+    Guard against accidentally running destructive test fixtures
+    (TRUNCATE ... CASCADE in clean_db below) against the dev/runtime
+    database. TEST_DATABASE_URL must be explicitly configured and must
+    look like a test database - see known_issues.md, "shared test/dev
+    database" entry (2026-08-15).
+    """
+    url = settings.TEST_DATABASE_URL
+    if not url:
+        raise RuntimeError(
+            "TEST_DATABASE_URL is not set. Refusing to run tests against "
+            "DATABASE_URL (the dev/runtime database) - see known_issues.md."
+        )
+    if "test" not in url.lower():
+        raise RuntimeError(
+            f"TEST_DATABASE_URL does not look like a test database "
+            f"(no 'test' in the URL): {url!r}. Refusing to run destructive "
+            f"fixtures against it."
+        )
+    return url
 
 
 TABLES_TRUNCATE_ORDER = [
@@ -43,9 +68,30 @@ async def reset_engine_per_test():
     следующего - отсюда 'attached to a different loop'. Сбрасываем синглтон
     в начале и в конце каждого теста, чтобы engine всегда создавался заново
     внутри текущего активного loop.
+
+    Additionally, force get_engine()/get_sessionmaker() to point at
+    TEST_DATABASE_URL for the duration of the test, instead of
+    DATABASE_URL. This prevents tests from ever touching the dev/
+    runtime database, even if DATABASE_URL is misconfigured to point
+    at the same place TEST_DATABASE_URL does (or vice versa) - see
+    _require_test_database_url() above.
     """
+    test_url = _require_test_database_url()
+
     await _reset_engine()
+
+    session_module._engine = create_async_engine(
+        test_url,
+        echo=settings.DB_ECHO,
+    )
+    session_module._async_session = async_sessionmaker(
+        bind=session_module._engine,
+        class_=session_module.AsyncSession,
+        expire_on_commit=False,
+    )
+
     yield
+
     await _reset_engine()
 
 

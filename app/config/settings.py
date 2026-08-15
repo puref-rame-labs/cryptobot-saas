@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = f"sqlite+aiosqlite:///{BASE_DIR}/data/database.db"
 
+    TEST_DATABASE_URL: str = ""
+
     DB_ECHO: bool = False
 
     ADMIN_IDS: list[int] = Field(default_factory=list)

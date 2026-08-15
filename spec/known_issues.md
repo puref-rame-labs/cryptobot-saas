@@ -173,6 +173,60 @@ Already Fixed (for reference, not open)
 
 ---
 
+Shared test and dev database (FIXED 2026-08-15)
+
+Where
+Before the fix: DATABASE_URL and the database used for manual dev/
+bot testing pointed at the same Postgres database
+(cryptobot_test_db). tests/conftest.py's autouse clean_db fixture
+runs TRUNCATE TABLE ... CASCADE on every test run.
+
+Symptom
+Running pytest silently wiped manually-created dev data (a
+hand-created test Product and Invoice used for live BTCPay testing
+were lost mid-session after an unrelated test run).
+
+Fix
+Created a separate cryptobot_dev_db for runtime/bot use. Added
+TEST_DATABASE_URL to settings.py, pointing at the original
+cryptobot_test_db. DATABASE_URL now points at cryptobot_dev_db.
+tests/conftest.py's reset_engine_per_test fixture now forces
+get_engine()/get_sessionmaker() to bind to TEST_DATABASE_URL for the
+duration of each test, and refuses to run at all
+(_require_test_database_url()) if TEST_DATABASE_URL is unset or
+doesn't contain "test" in the URL - a defensive guard in case the
+two get swapped again in the future.
+Verified: full test suite passes against cryptobot_dev_db in
+isolation; deliberately unsetting TEST_DATABASE_URL causes all tests
+to fail loudly instead of running against the wrong database.
+
+---
+
+paytest.py appears stale / inconsistent with the current pipeline
+
+Where
+app/handlers/paytest.py
+
+Symptom
+Creates a PaymentEvent directly with event_type="webhook_received"
+and provider="mock", without going through process_payment_event()
+at all - no idempotency_key is computed or set, and nothing consumes
+the created event afterward. Does not match the shape used anywhere
+else in the payment pipeline (idempotency.md: provider +
+external_payment_id + event_type -> idempotency_key).
+
+Status
+Noticed during live BTCPay testing (2026-08-15) while looking for an
+existing admin test path, not used or fixed this session. Likely
+predates the current process_payment_event.py pipeline and was never
+updated alongside it.
+
+Decision needed
+Either update paytest.py to call process_payment_event() properly
+(matching how real webhooks are processed), or remove it if it's
+superseded by manual testing via the actual provider + webhook flow
+(as done today for BTCPay).
+
 Operational Notes (not spec/code discrepancies, but worth preserving
 across sessions)
 
