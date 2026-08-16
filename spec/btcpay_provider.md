@@ -152,6 +152,23 @@ An EXPIRED->PAID late-payment scenario was also observed live (see
 known_issues.md item 1). Steps 7-8 (mainnet purchase, monitoring)
 remain, pending mainnet Store provisioning.
 
+RUB Rate Source (RESOLVED 2026-08-15)
+Kraken (BTCPay's original default) does not quote BTC_RUB
+(ERR_NO_RULE_MATCH) - likely reflects major Western exchanges
+dropping RUB pairs. Confirmed working sources for BTC_RUB: bitpay,
+yadio, freecurrencyrates, bitcoinkenya - all niche/aggregator
+sources rather than major exchange order books, likely themselves
+deriving the rate via BTC_USD x USD_RUB proxy conversion rather than
+a direct RUB order book.
+Decision: use BTCPay's built-in Fallback rate source feature (Store
+Settings > Rates), NOT custom rate-rule scripting. Primary: bitpay
+(already in use, confirmed reliable during testnet testing).
+Fallback: freecurrencyrates. Avoids a single point of failure if the
+primary source becomes unavailable (as happened previously with
+Coinaverage's API discontinuation, per BTCPay's own FAQ) - invoice
+creation would otherwise fail outright with no automatic recovery,
+as was observed today when Kraken was still configured.
+
 Open Questions (resolve before implementation)
 Rate-lock handling: accept BTCPay's default expiration window as-is,
 widen it, or add grace-period/manual-reconciliation handling for
