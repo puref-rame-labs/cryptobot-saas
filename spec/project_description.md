@@ -48,7 +48,7 @@ Main focus:
 
 ## Backend
 
-* Python 3.13
+* Python 3.14
 * asyncio
 
 ## Telegram
@@ -63,7 +63,7 @@ Main focus:
 ## Database
 
 * SQLAlchemy
-* SQLite
+* PostgreSQL (migrated from SQLite - see postgres_migration.md)
 
 ## Runtime Environment
 
@@ -126,6 +126,13 @@ Implemented:
 * invoice payment transition
 * digital delivery
 * idempotent delivery protection
+* PostgreSQL persistence (migrated from SQLite dev DB)
+* CryptoBot provider (custodial, multi-asset) - implemented and
+  functional; testnet and mainnet both live-tested prior to this
+  fork (on SQLite, before the Postgres migration)
+* BTCPay Server provider (non-custodial, on-chain BTC only) -
+  implemented and verified end-to-end via live testnet payment
+  through the real Telegram bot (2026-08-15)
 
 ---
 
@@ -135,12 +142,14 @@ Not yet implemented:
 
 * distributed workers
 * retries queue
-* PostgreSQL
 * admin panel
-* real crypto providers
-* refund support
+* refund support (REFUNDED state absent from state machine -
+  see known_issues.md)
 * observability stack
 * transactional outbox
+* Lightning Network for BTCPay (deferred - VPS resource constraints,
+  see btcpay_provider.md)
+* stablecoin payment support (deferred - see known_issues.md)
 
 ---
 
@@ -149,12 +158,12 @@ Not yet implemented:
 Planned evolution:
 
 * production-grade payment architecture
-* real blockchain providers
 * asynchronous workers
 * event bus
 * delivery retry subsystem
-* PostgreSQL migration
 * scalable deployment topology
+* mainnet rollout for BTCPay (testnet verified, mainnet Store
+  provisioning pending - see btcpay_provider.md)
 
 ---
 

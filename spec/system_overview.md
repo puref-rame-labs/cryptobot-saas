@@ -53,18 +53,24 @@ READY is NOT purchasable.
 
 ## Current Stack
 
-- Python 3.13
+- Python 3.14
 - aiogram
 - FastAPI
 - SQLAlchemy
-- SQLite (dev)
+- PostgreSQL (migrated from SQLite - see postgres_migration.md)
 
 ---
 
 ## Non-goals (MVP)
 
-- refunds
+- refunds (REFUNDED state absent from state machine)
 - distributed workers
-- blockchain node integration
 - admin panel
 - observability stack
+- Lightning Network for BTCPay (deferred - VPS resource constraints)
+- stablecoin payment support (deferred)
+
+Note: the bot itself does not integrate directly with a blockchain
+node - BTCPay Server (a separate self-hosted service) handles that
+via bitcoind + NBXplorer. The bot talks to BTCPay's Greenfield API,
+same abstraction level as CryptoBot's custodial API.
