@@ -95,6 +95,17 @@ decide what (if anything) triggers it (manual admin action vs
 provider refund webhook vs something else — not currently specified
 anywhere).
 
+Note (2026-08-16): REFUNDED design is intentionally sequenced AFTER
+the referral program use-case (see project architecture notes -
+ReferralAccrual ledger, referred_by_id/referral_code on User). Abuse
+vector identified: without REFUNDED being aware of referral accrual,
+a self-referral (or colluding accounts) could purchase to trigger a
+referral payout, then refund the purchase while keeping the accrued
+bonus - the refund and the accrual must be part of the same
+idempotent transaction, not designed independently. REFUNDED state
+machine work should treat ReferralAccrual reversal as a first-class
+requirement, not a follow-up patch.
+
 Status: DEFERRED (decided 2026-08-08)
 Explicitly deferred, not forgotten. Rationale: no provider contract
 (CryptoBot or BTCPay) currently specifies a refund webhook, so the
