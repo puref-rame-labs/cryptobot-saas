@@ -42,7 +42,13 @@ Either:
 (b) remove the EXPIRED -> PAID transition and handle late payments
     via a separate reconciliation/refund flow instead.
 
-Status: DEFERRED (decided 2026-08-08)
+Status: RESOLVED (decided 2026-08-08, formalized 2026-08-15)
+Option (a) chosen. Formal rationale and volatility-based risk
+estimate now live in invoice_state_machine.md under "Intentional
+Exception: EXPIRED → PAID (late payment)" instead of being deferred
+here - see that spec for the full decision record.
+
+Original deferred rationale, preserved for history:
 Keeping current behavior (EXPIRED -> PAID allowed) for now. Rationale:
 CryptoBot (currency_conversion.md) converts fiat -> crypto at the
 moment of payment, not at invoice creation, so a late CryptoBot
