@@ -65,6 +65,22 @@ class User(Base):
         back_populates="user"
     )
 
+    referral_code: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+        unique=True,
+    )
+
+    referred_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True,
+    )
+
+    referrer: Mapped["User | None"] = relationship(
+        remote_side=[id],
+        foreign_keys=[referred_by_id],
+    )
+
 
 # -------------------------
 # PRODUCT
@@ -389,6 +405,69 @@ class PaymentEvent(Base):
 
     last_error: Mapped[str | None] = mapped_column(
         String(1024),
+        nullable=True,
+    )
+
+    invoice: Mapped["Invoice"] = relationship()
+
+
+# -------------------------
+# REFERRAL ACCRUAL
+# -------------------------
+class ReferralAccrualStatus(str, Enum):
+    PENDING = "PENDING"
+    PAID_OUT = "PAID_OUT"
+
+
+class ReferralAccrual(Base):
+    __tablename__ = "referral_accruals"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    invoice_id: Mapped[int] = mapped_column(
+        ForeignKey("invoices.id"),
+        nullable=False,
+        unique=True,
+    )
+
+    referrer_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    referred_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    amount: Mapped[Decimal] = mapped_column(
+        Numeric(18, 8),
+        nullable=False,
+    )
+
+    currency: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+    )
+
+    percent: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2),
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        default=ReferralAccrualStatus.PENDING.value,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+    paid_out_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
         nullable=True,
     )
 

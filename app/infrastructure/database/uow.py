@@ -15,6 +15,7 @@ class UnitOfWork:
         self.brands = None
         self.invoices = None
         self.payment_events = None
+        self.referral_accruals = None
 
     async def __aenter__(self):
         self.session = self._sessionmaker()
@@ -28,6 +29,7 @@ class UnitOfWork:
         from app.infrastructure.repositories.brand_repository import BrandRepository
         from app.infrastructure.repositories.invoice_repository import InvoiceRepository
         from app.infrastructure.repositories.payment_event_repository import PaymentEventRepository
+        from app.infrastructure.repositories.referral_accrual_repository import ReferralAccrualRepository
 
         self.users = UserRepository(self.session)
         self.products = ProductRepository(self.session)
@@ -37,6 +39,7 @@ class UnitOfWork:
         self.brands = BrandRepository(self.session)
         self.invoices = InvoiceRepository(self.session)
         self.payment_events = PaymentEventRepository(self.session)
+        self.referral_accruals = ReferralAccrualRepository(self.session)
 
         return self
 
