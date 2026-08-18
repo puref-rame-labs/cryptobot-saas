@@ -24,6 +24,8 @@ from app.handlers.help import router as help_router
 from app.handlers.unknown import router as unknown_router
 from app.handlers.publish import router as publish_router
 from app.handlers.archive import router as archive_router
+from app.handlers.referral_stats import router as referral_stats_router
+from app.handlers.referral_payouts import router as referral_payouts_router
 
 from app.infrastructure.database.uow import UnitOfWork
 from app.application.catalog.use_cases.bootstrap_catalog import BootstrapCatalogUseCase
@@ -54,6 +56,8 @@ async def main():
     dp.include_router(help_router)
     dp.include_router(publish_router)
     dp.include_router(archive_router)
+    dp.include_router(referral_stats_router)
+    dp.include_router(referral_payouts_router)
     dp.include_router(catalog_navigation_router)
     dp.include_router(unknown_router)
 
@@ -62,6 +66,7 @@ async def main():
             BotCommand(command="start", description="Запустить бота"),
             BotCommand(command="buy", description="Оформить покупку"),
             BotCommand(command="help", description="Как пополнить баланс"),
+            BotCommand(command="referral_stats", description="Моя реферальная статистика"),
         ],
         scope=BotCommandScopeDefault(),
     )
@@ -77,6 +82,7 @@ async def main():
                 BotCommand(command="publish", description="Опубликовать товар"),
                 BotCommand(command="archive", description="Архивировать товар"),
                 BotCommand(command="testmode", description="Переключить testnet"),
+                BotCommand(command="referral_payouts", description="Реферальные выплаты"),
             ],
             scope=BotCommandScopeChat(chat_id=admin_id),
         )

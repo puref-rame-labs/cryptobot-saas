@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message
 
 from app.infrastructure.database.uow import UnitOfWork
@@ -9,7 +9,12 @@ router = Router()
 
 
 @router.message(CommandStart())
-async def start_command(message: Message):
+async def start_command(message: Message, command: CommandObject):
+
+    ref_code = None
+
+    if command.args and command.args.startswith("ref_"):
+        ref_code = command.args[len("ref_"):]
 
     async with UnitOfWork() as uow:
         service = UserService(uow)
@@ -17,10 +22,15 @@ async def start_command(message: Message):
         user = await service.register_user(
             telegram_id=message.from_user.id,
             username=message.from_user.username,
+            ref_code=ref_code,
         )
+
+    bot_username = (await message.bot.get_me()).username
 
     await message.answer(
         f"Welcome, user #{user.id}\n\n"
         f"Используйте /buy, чтобы посмотреть каталог.\n"
-        f"Если нужно пополнить баланс для оплаты — команда /help."
+        f"Если нужно пополнить баланс для оплаты — команда /help.\n\n"
+        f"Ваша реферальная ссылка:\n"
+        f"https://t.me/{bot_username}?start=ref_{user.referral_code}"
     )
