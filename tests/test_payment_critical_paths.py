@@ -8,7 +8,7 @@ from app.application.invoice.use_cases.deliver_invoice import DeliverInvoiceUseC
 from app.application.invoice.use_cases.mark_paid import MarkInvoicePaidUseCase
 from app.application.delivery.service import DeliveryService
 from app.infrastructure.database.session import get_sessionmaker
-from app.infrastructure.database.models import Invoice, PaymentEvent
+from app.infrastructure.database.models import Invoice, PaymentEvent, ReferralAccrual
 from app.infrastructure.database.uow import UnitOfWork
 import app.application.bot_instance as bot_instance
 
@@ -201,6 +201,76 @@ async def test_delivery_exception_does_not_roll_back_payment_state(seeded_invoic
         assert "delivery_exception" in (event.last_error or ""), (
             f"Expected last_error to record the delivery exception, "
             f"got: {event.last_error!r}"
+        )
+    finally:
+        await session.close()
+
+
+async def test_referral_accrual_created_once_on_paid_and_survives_replay(
+    seeded_invoice_with_referrer, mock_bot
+):
+    """
+    referral_program.md: accrual is created as a side effect of the SAME
+    idempotent webhook pipeline as the PAID transition, and a duplicate
+    webhook for the same invoice_id MUST NOT create a second
+    ReferralAccrual row (unique constraint uq_referral_accruals_invoice_id,
+    migration b3f7a19c2d05).
+    """
+    invoice_id = seeded_invoice_with_referrer["invoice_id"]
+    referrer_id = seeded_invoice_with_referrer["referrer_id"]
+    referred_user_id = seeded_invoice_with_referrer["referred_user_id"]
+
+    normalized = make_normalized("ext-referral-001")
+
+    first = await process_payment_event(normalized, "cryptobot")
+    assert first["status"] == "accepted"
+
+    sessionmaker = get_sessionmaker()
+    session = sessionmaker()
+    try:
+        accruals = (await session.execute(
+            select(ReferralAccrual).where(
+                ReferralAccrual.invoice_id == invoice_id
+            )
+        )).scalars().all()
+
+        assert len(accruals) == 1, (
+            f"Expected exactly 1 ReferralAccrual after first PAID webhook, "
+            f"got {len(accruals)}"
+        )
+
+        accrual = accruals[0]
+        assert accrual.referrer_id == referrer_id
+        assert accrual.referred_user_id == referred_user_id
+        assert accrual.status == "PENDING"
+        assert accrual.amount == Decimal("100.00000000"), (
+            "referral_program.md: amount is computed from Invoice.amount "
+            "(fiat), at REFERRAL_PERCENT (default 10%) - expected 100.00 "
+            f"RUB commission on a 1000.00 RUB invoice, got {accrual.amount}"
+        )
+    finally:
+        await session.close()
+
+    # Replay the same webhook (duplicate delivery, at-least-once semantics).
+    replay = await process_payment_event(normalized, "cryptobot")
+    assert replay["status"] == "duplicate", (
+        "Duplicate webhook for an already-processed external_payment_id "
+        "must be caught by the PaymentEvent idempotency_key unique "
+        f"constraint, got status: {replay['status']!r}"
+    )
+
+    session = sessionmaker()
+    try:
+        accruals_after_replay = (await session.execute(
+            select(ReferralAccrual).where(
+                ReferralAccrual.invoice_id == invoice_id
+            )
+        )).scalars().all()
+
+        assert len(accruals_after_replay) == 1, (
+            "referral_program.md: 'Repeated PAID events for the same "
+            "invoice (replay) MUST NOT create a second ReferralAccrual.' "
+            f"Found {len(accruals_after_replay)} rows after replay."
         )
     finally:
         await session.close()
