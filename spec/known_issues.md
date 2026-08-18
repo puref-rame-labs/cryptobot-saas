@@ -106,7 +106,27 @@ idempotent transaction, not designed independently. REFUNDED state
 machine work should treat ReferralAccrual reversal as a first-class
 requirement, not a follow-up patch.
 
-Status: DEFERRED (decided 2026-08-08)
+Update (2026-08-17): Referral program implemented per referral_program.md
+(migration b3f7a19c2d05_add_referral_program - User.referral_code,
+User.referred_by_id, ReferralAccrual table with a unique constraint on
+invoice_id). Accrual is created inside the same idempotent checkpoint
+as the PAID transition in process_payment_event.py, before delivery -
+verified by
+tests/test_payment_critical_paths.py::test_referral_accrual_created_once_on_paid_and_survives_replay,
+which confirms a replayed webhook does not create a duplicate accrual.
+Payout is manual-only for v1 (/referral_payouts, admin-gated), no
+CryptoBot Transfer API integration - see referral_program.md "Payout
+(Manual, v1)".
+
+The sequencing precondition noted above (2026-08-16) is now satisfied:
+referral accrual exists as a concrete, implemented mechanism, so
+REFUNDED state machine work is UNBLOCKED and can now proceed with a
+real ReferralAccrual reversal design (clawback vs. keep on refund) as
+a first-class part of that work, rather than a hypothetical constraint.
+
+Status: DEFERRED (decided 2026-08-08), referral-program precondition
+RESOLVED (2026-08-17) - REFUNDED implementation itself remains not yet
+started.
 Explicitly deferred, not forgotten. Rationale: no provider contract
 (CryptoBot or BTCPay) currently specifies a refund webhook, so the
 only realistic near-term trigger would be a manual admin action
