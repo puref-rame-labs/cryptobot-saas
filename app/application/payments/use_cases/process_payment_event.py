@@ -9,6 +9,8 @@ from app.infrastructure.database.models import PaymentEvent
 from app.application.invoice.use_cases.mark_paid import MarkInvoicePaidUseCase
 from app.application.invoice.use_cases.deliver_invoice import DeliverInvoiceUseCase
 from app.application.delivery.service import DeliveryService
+from app.infrastructure.database.models import ReferralAccrual
+from app.config.settings import settings
 
 
 def build_idempotency_key(provider, external_payment_id, event_type):
@@ -77,6 +79,27 @@ async def process_payment_event(normalized, provider_name: str):
             event.last_error = "invalid_transition"
             await uow.session.commit()
             return {"status": "invalid_transition"}
+
+        # 4.5 SIDE EFFECT: REFERRAL ACCRUAL
+        # referral_program.md: accrual is a side effect of the SAME
+        # idempotent webhook pipeline, in the SAME transaction/checkpoint
+        # as the PAID transition - not after delivery, not best-effort.
+        # invoice.user is already loaded via selectinload in
+        # get_by_external_payment_id().
+        if invoice.user and invoice.user.referred_by_id:
+            existing_accrual = await uow.referral_accruals.get_by_invoice_id(
+                invoice.id
+            )
+            if not existing_accrual:
+                accrual = ReferralAccrual(
+                    invoice_id=invoice.id,
+                    referrer_id=invoice.user.referred_by_id,
+                    referred_user_id=invoice.user.id,
+                    amount=invoice.amount * settings.REFERRAL_PERCENT / 100,
+                    currency=invoice.currency,
+                    percent=settings.REFERRAL_PERCENT,
+                )
+                await uow.referral_accruals.create_accrual(accrual)
 
         # CHECKPOINT COMMIT
         # invoice_state_machine.md: "Delivery failure does NOT change

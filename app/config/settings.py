@@ -1,4 +1,5 @@
 from pathlib import Path
+from decimal import Decimal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -27,6 +28,8 @@ class Settings(BaseSettings):
     CRYPTOBOT_TESTNET_HOST: str = "testnet-pay.crypt.bot"
 
     DEFAULT_PAYMENT_PROVIDER: str = "mock"
+
+    REFERRAL_PERCENT: Decimal = Decimal("10.00")
 
     CRYPTOBOT_PROXY: str | None = None
 
