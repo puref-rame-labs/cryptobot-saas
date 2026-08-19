@@ -417,6 +417,7 @@ class PaymentEvent(Base):
 class ReferralAccrualStatus(str, Enum):
     PENDING = "PENDING"
     PAID_OUT = "PAID_OUT"
+    CLAWED_BACK = "CLAWED_BACK"
 
 
 class ReferralAccrual(Base):
