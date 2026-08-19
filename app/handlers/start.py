@@ -27,8 +27,14 @@ async def start_command(message: Message, command: CommandObject):
 
     bot_username = (await message.bot.get_me()).username
 
+    display_name = (
+        message.from_user.first_name
+        or message.from_user.username
+        or "друг"
+    )
+
     await message.answer(
-        f"Welcome, user #{user.id}\n\n"
+        f"Добро пожаловать, {display_name}!\n\n"
         f"Используйте /buy, чтобы посмотреть каталог.\n"
         f"Если нужно пополнить баланс для оплаты — команда /help.\n\n"
         f"Ваша реферальная ссылка:\n"
