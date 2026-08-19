@@ -252,17 +252,65 @@ the created event afterward. Does not match the shape used anywhere
 else in the payment pipeline (idempotency.md: provider +
 external_payment_id + event_type -> idempotency_key).
 
-Status
-Noticed during live BTCPay testing (2026-08-15) while looking for an
-existing admin test path, not used or fixed this session. Likely
-predates the current process_payment_event.py pipeline and was never
-updated alongside it.
+Status: RESOLVED (2026-08-19)
+Removed. app/handlers/paytest.py deleted, along with its router
+import/registration and menu entry in main.py. Superseded by manual
+testing via the actual provider + webhook flow (as already done for
+BTCPay, and as used for the referral program / refund manual UI test
+on 2026-08-19) - the second of the two options this entry originally
+proposed. The command also created a PaymentEvent with no
+idempotency_key set (idempotency_key is nullable=False, unique=True
+on the model) and was never consumed by process_payment_event, so it
+could not have advanced an invoice's state under any circumstance -
+confirmed dead, not merely stale, at removal time.
 
-Decision needed
-Either update paytest.py to call process_payment_event() properly
-(matching how real webhooks are processed), or remove it if it's
-superseded by manual testing via the actual provider + webhook flow
-(as done today for BTCPay).
+BootstrapCatalogUseCase hardcodes brand_id=1, breaks on empty catalog
+
+Where
+app/application/catalog/use_cases/bootstrap_catalog.py
+
+Symptom
+On a freshly-migrated, empty dev database (categories/subcategories/
+product_groups/brands all empty), starting the bot
+(`python -m app.main`) crashes with:
+    sqlalchemy.exc.IntegrityError: ForeignKeyViolationError:
+    insert or update on table "products" violates foreign key
+    constraint "fk_products_brand_id"
+    DETAIL: Key (brand_id)=(1) is not present in table "brands".
+
+Cause
+BootstrapCatalogUseCase.execute() only checks
+`if products: return` (i.e. skips seeding if ANY product already
+exists) and otherwise directly inserts a Product with brand_id=1
+hardcoded, without first creating the required Category ->
+Subcategory -> ProductGroup -> Brand chain (catalog_hierarchy.md:
+"Brand is REQUIRED for every Product (no nullable brand)", "Every
+level MUST reference its immediate parent only"). It silently
+assumed brand_id=1 would already exist from some earlier manual
+seeding, rather than actually bootstrapping the catalog hierarchy
+itself despite the class name.
+
+Discovered 2026-08-19 while manually testing the referral program +
+refund UI end-to-end in the real Telegram bot against a genuinely
+empty dev database (cryptobot_dev_db) after confirming via psql that
+users/invoices/referral_accruals were all empty. Not related to the
+referral program or refund work itself - a pre-existing latent bug
+that a previously-seeded dev DB had been masking.
+
+Status: DEFERRED (decided 2026-08-19)
+Worked around for the immediate manual UI test via a one-off manual
+psql seed of the full Category -> Subcategory -> ProductGroup ->
+Brand -> Product chain (not committed as code - purely local dev data).
+Decision needed before mainnet go-live: BootstrapCatalogUseCase should
+either (a) create the full hierarchy itself (Category, Subcategory,
+ProductGroup, Brand, then Product referencing the just-created
+Brand.id), or (b) be removed/replaced with an explicit seed script
+that's run once per environment rather than auto-invoked from
+main.py on every startup. Revisit before BTCPay/CryptoBot mainnet
+rollout, since production will start from an equally empty catalog
+and hit the exact same crash on first boot.
+
+---
 
 Operational Notes (not spec/code discrepancies, but worth preserving
 across sessions)
