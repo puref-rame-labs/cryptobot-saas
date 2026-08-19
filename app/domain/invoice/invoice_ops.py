@@ -23,6 +23,10 @@ class InvoiceOps:
         invoice.status = InvoiceStateMachine.mark_expired(invoice.status)
 
     @staticmethod
+    def mark_refunded(invoice) -> None:
+        invoice.status = InvoiceStateMachine.mark_refunded(invoice.status)
+
+    @staticmethod
     def is_active(invoice) -> bool:
         return invoice.status in {
             InvoiceState.PENDING.value,

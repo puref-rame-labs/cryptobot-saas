@@ -15,6 +15,7 @@ class InvoiceState(str, Enum):
     DELIVERED = "DELIVERED"
     FAILED = "FAILED"
     EXPIRED = "EXPIRED"
+    REFUNDED = "REFUNDED"
 
 
 class InvoiceStateMachine:
@@ -31,10 +32,12 @@ class InvoiceStateMachine:
         InvoiceState.PAID: {
             InvoiceState.DELIVERED,
             InvoiceState.FAILED,
+            InvoiceState.REFUNDED,
         },
-        InvoiceState.DELIVERED: set(),
+        InvoiceState.DELIVERED: {InvoiceState.REFUNDED},
         InvoiceState.FAILED: set(),
         InvoiceState.EXPIRED: {InvoiceState.PAID},
+        InvoiceState.REFUNDED: set(),
     }
 
     @classmethod
@@ -69,3 +72,7 @@ class InvoiceStateMachine:
     @classmethod
     def mark_expired(cls, current: str) -> str:
         return cls.transition(current, InvoiceState.EXPIRED.value)
+
+    @classmethod
+    def mark_refunded(cls, current: str) -> str:
+        return cls.transition(current, InvoiceState.REFUNDED.value)
