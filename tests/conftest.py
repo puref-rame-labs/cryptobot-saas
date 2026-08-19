@@ -291,6 +291,80 @@ async def seeded_invoice_no_file(db_session, clean_db):
     return invoice.id
 
 
+@pytest_asyncio.fixture
+async def seeded_invoice_with_referrer_no_payment(db_session, clean_db):
+    """
+    Like seeded_invoice_with_referrer, but the invoice is NOT yet paid -
+    used by refund tests that need to drive the invoice through the
+    real process_payment_event pipeline themselves (to get a genuine
+    DELIVERED status + a genuine ReferralAccrual), then separately test
+    RefundInvoiceUseCase against that real state.
+    """
+    category = Category(title="Электроника")
+    db_session.add(category)
+    await db_session.flush()
+
+    subcategory = Subcategory(title="Планшеты", category_id=category.id)
+    db_session.add(subcategory)
+    await db_session.flush()
+
+    product_group = ProductGroup(title="iPad", subcategory_id=subcategory.id)
+    db_session.add(product_group)
+    await db_session.flush()
+
+    brand = Brand(title="Apple", product_group_id=product_group.id)
+    db_session.add(brand)
+    await db_session.flush()
+
+    referrer = User(
+        telegram_id=333444555,
+        username="referrer_for_refund",
+        referral_code="REFUND1",
+    )
+    db_session.add(referrer)
+    await db_session.flush()
+
+    referred_user = User(
+        telegram_id=666777888,
+        username="referred_for_refund",
+        referred_by_id=referrer.id,
+    )
+    db_session.add(referred_user)
+    await db_session.flush()
+
+    product = Product(
+        title="Test Product",
+        price=Decimal("1000.00"),
+        currency="RUB",
+        status="PUBLISHED",
+        brand_id=brand.id,
+        telegram_file_id="FAKE_FILE_ID",
+        file_type="document",
+    )
+    db_session.add(product)
+    await db_session.flush()
+
+    invoice = Invoice(
+        user_id=referred_user.id,
+        product_id=product.id,
+        amount=Decimal("1000.00"),
+        currency="RUB",
+        status="PENDING",
+        provider="cryptobot",
+        external_payment_id="ext-refund-001",
+        expires_at=datetime.utcnow() + timedelta(minutes=30),
+    )
+    db_session.add(invoice)
+    await db_session.commit()
+
+    return {
+        "invoice_id": invoice.id,
+        "referrer_id": referrer.id,
+        "referred_user_id": referred_user.id,
+        "external_payment_id": "ext-refund-001",
+    }
+
+
 @pytest_asyncio.fixture(autouse=True)
 def mock_bot():
     fake_bot = AsyncMock()
