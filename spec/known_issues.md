@@ -297,18 +297,17 @@ users/invoices/referral_accruals were all empty. Not related to the
 referral program or refund work itself - a pre-existing latent bug
 that a previously-seeded dev DB had been masking.
 
-Status: DEFERRED (decided 2026-08-19)
-Worked around for the immediate manual UI test via a one-off manual
-psql seed of the full Category -> Subcategory -> ProductGroup ->
-Brand -> Product chain (not committed as code - purely local dev data).
-Decision needed before mainnet go-live: BootstrapCatalogUseCase should
-either (a) create the full hierarchy itself (Category, Subcategory,
-ProductGroup, Brand, then Product referencing the just-created
-Brand.id), or (b) be removed/replaced with an explicit seed script
-that's run once per environment rather than auto-invoked from
-main.py on every startup. Revisit before BTCPay/CryptoBot mainnet
-rollout, since production will start from an equally empty catalog
-and hit the exact same crash on first boot.
+Status: RESOLVED (2026-08-20)
+Fixed per option (a): BootstrapCatalogUseCase now creates the full
+Category -> Subcategory -> ProductGroup -> Brand chain itself (each
+level flushed to get its id before creating the next, referencing
+only its immediate parent per catalog_hierarchy.md), before creating
+the seed Product referencing the just-created Brand.id. The
+`if products: return` no-op guard is unchanged. Verified by
+tests/test_bootstrap_catalog.py::test_bootstrap_catalog_creates_full_hierarchy_on_empty_db
+(confirms the full chain on a genuinely empty DB) and
+::test_bootstrap_catalog_is_a_noop_when_products_already_exist
+(confirms no duplicate hierarchy when a product already exists).
 
 ---
 
