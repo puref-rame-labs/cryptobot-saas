@@ -88,7 +88,7 @@ the accrued bonus.
 RefundInvoiceUseCase, in the SAME transaction/checkpoint as the
 PAID -> REFUNDED transition:
 
-1. Load invoice, verify status == PAID
+1. Load invoice, verify status in {PAID, DELIVERED}
 2. Transition invoice.status -> REFUNDED
 3. IF a ReferralAccrual exists for this invoice_id AND its status
    is still PENDING:

@@ -18,6 +18,7 @@ PENDING → PAID
 PENDING → EXPIRED  
 PENDING → FAILED  
 PAID → REFUNDED  
+DELIVERED → REFUNDED  
 
 ---
 
@@ -26,6 +27,24 @@ PAID → REFUNDED
 PAID → PENDING  
 FAILED → PAID  
 REFUNDED → PAID  
+
+# Formalized Addition: DELIVERED → REFUNDED (refund.md)
+
+DELIVERED → REFUNDED was NOT in this file's original "Allowed
+Transitions" list — only PAID → REFUNDED was. Added when refund.md
+was implemented (2026-08-20), for a practical reason: PAID and
+DELIVERED happen within the same webhook transaction, milliseconds
+apart (checkpoint commit, then immediate delivery in
+process_payment_event.py). By the time an admin becomes aware of a
+refund request - a user reports a bad file, a dispute, etc.,
+realistically hours or days later - the invoice is almost always
+already DELIVERED, not PAID. Restricting refund to PAID only would
+make /refund unusable for the actual common case.
+
+REFUNDED remains terminal either way - no REFUNDED → anything
+transition exists, regardless of which state (PAID or DELIVERED) it
+was reached from. See refund.md for the full RefundInvoiceUseCase
+design, including ReferralAccrual clawback.
 
 # Intentional Exception: EXPIRED → PAID (late payment)
 

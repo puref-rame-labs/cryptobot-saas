@@ -133,6 +133,11 @@ Implemented:
 * BTCPay Server provider (non-custodial, on-chain BTC only) -
   implemented and verified end-to-end via live testnet payment
   through the real Telegram bot (2026-08-15)
+* Referral program (deep-link registration, idempotent commission
+  accrual in the same checkpoint as the PAID transition, manual
+  payout via /referral_payouts) - see referral_program.md
+* Refund support (manual admin /refund, PAID/DELIVERED -> REFUNDED,
+  ReferralAccrual clawback in the same transaction) - see refund.md
 
 ---
 
@@ -143,8 +148,6 @@ Not yet implemented:
 * distributed workers
 * retries queue
 * admin panel
-* refund support (REFUNDED state absent from state machine -
-  see known_issues.md)
 * observability stack
 * transactional outbox
 * Lightning Network for BTCPay (deferred - VPS resource constraints,

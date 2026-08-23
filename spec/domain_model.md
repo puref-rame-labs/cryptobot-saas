@@ -10,6 +10,9 @@ Fields:
 - id
 - telegram_id
 - username
+- referral_code (str, unique, generated at user creation)
+- referred_by_id (FK -> User.id, nullable, self-referential, set at
+  most once - see referral_program.md)
 
 ---
 
@@ -44,6 +47,26 @@ Fields:
 - delivered
 - created_at
 - expires_at
+
+---
+
+# ReferralAccrual
+
+Append-only ledger tracking referral commission (see
+referral_program.md and refund.md).
+
+Fields:
+- id
+- invoice_id (FK -> Invoice.id, unique - one accrual per invoice)
+- referrer_id (FK -> User.id)
+- referred_user_id (FK -> User.id)
+- amount (Numeric, fiat - always Invoice.amount-derived, never
+  crypto-denominated)
+- currency (str - matches Invoice.currency)
+- percent (Numeric - rate snapshotted at accrual time)
+- status (PENDING / PAID_OUT / CLAWED_BACK)
+- created_at
+- paid_out_at (nullable)
 
 ---
 
@@ -96,6 +119,19 @@ DRAFT → READY → PUBLISHED → ARCHIVED
 - delivery executed at most once
 - external_payment_id must be unique
 - state transitions ONLY via idempotent webhook pipeline
+
+---
+
+# ReferralAccrual Invariants
+
+- append-only ledger (never mutated except status transitions and
+  paid_out_at)
+- one ReferralAccrual per invoice_id (unique constraint, idempotent
+  per payment webhook)
+- amount always fiat-denominated (Invoice.amount), independent of
+  paid crypto asset or provider
+- CLAWED_BACK set only via RefundInvoiceUseCase, in the same
+  transaction as the invoice's REFUNDED transition (refund.md)
 
 ---
 

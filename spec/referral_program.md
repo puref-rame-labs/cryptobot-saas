@@ -174,12 +174,13 @@ per payout action) — if partial payouts become a real need, revisit.
 
 # Explicit Non-Goals (v1)
 
-- Refund-aware accrual reversal — deferred until REFUNDED exists
-  (known_issues.md item 2). When REFUNDED is implemented, this spec
-  MUST be revisited: a refunded invoice's ReferralAccrual needs a
-  defined outcome (clawback vs. keep) as part of the same
-  transaction as the refund, per the self-referral/collusion abuse
-  vector already flagged in known_issues.md item 2's note.
+- Refund-aware accrual reversal — was deferred here until REFUNDED
+  existed (known_issues.md item 2). RESOLVED (2026-08-20): now
+  implemented in refund.md's "ReferralAccrual Clawback" section - a
+  PENDING accrual is marked CLAWED_BACK in the same transaction as
+  the invoice's REFUNDED transition; a PAID_OUT accrual is left
+  untouched but flagged to the admin. See refund.md for the full
+  design.
 - Automatic payout (CryptoBot Transfer API or otherwise)
 - Per-referrer custom commission rates
 - Multi-level/tiered referrals (referrer-of-a-referrer)

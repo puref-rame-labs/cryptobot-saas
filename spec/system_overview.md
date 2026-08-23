@@ -63,7 +63,6 @@ READY is NOT purchasable.
 
 ## Non-goals (MVP)
 
-- refunds (REFUNDED state absent from state machine)
 - distributed workers
 - admin panel
 - observability stack
