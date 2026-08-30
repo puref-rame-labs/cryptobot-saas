@@ -1,0 +1,39 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    networks:
+      - default
+      - generated_default
+    env_file:
+      - .env
+    depends_on:
+      bot_postgres:
+        condition: service_healthy
+    ports:
+      # Порт FastAPI внутри контейнера. Наружу на хост не публикуем -
+      # webhook приходит от btcpayserver внутри generated_default сети,
+      # по внутреннему DNS-имени "bot".
+      - "127.0.0.1:8000:8000"
+
+  bot_postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=bot
+      - POSTGRES_PASSWORD=${BOT_POSTGRES_PASSWORD}
+      - POSTGRES_DB=cryptobot_prod
+    volumes:
+      - bot_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bot -d cryptobot_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  generated_default:
+    external: true
+
+volumes:
+  bot_postgres_data:
