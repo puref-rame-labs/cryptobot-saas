@@ -37,11 +37,13 @@ class Settings(BaseSettings):
     BTCPAY_MAINNET_API_KEY: str = ""
     BTCPAY_MAINNET_STORE_ID: str = ""
     BTCPAY_MAINNET_WEBHOOK_SECRET: str = ""
+    BTCPAY_MAINNET_PUBLIC_HOST: str = ""
 
     BTCPAY_TESTNET_HOST: str = ""
     BTCPAY_TESTNET_API_KEY: str = ""
     BTCPAY_TESTNET_STORE_ID: str = ""
     BTCPAY_TESTNET_WEBHOOK_SECRET: str = ""
+    BTCPAY_TESTNET_PUBLIC_HOST: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

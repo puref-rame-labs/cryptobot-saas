@@ -64,6 +64,17 @@ async def process_payment_event(normalized, provider_name: str):
             await uow.session.commit()
             return {"status": "invoice_not_found"}
 
+        # 3.5 STATUS GATE
+        # invoice_state_machine.md: only a genuine "paid" event may
+        # trigger the PAID transition + delivery. Non-paid events
+        # (processing, expired, failed, or any unmapped provider
+        # status) must be persisted (already done above) but MUST NOT
+        # mutate invoice state or trigger delivery.
+        if normalized.status != "paid":
+            event.last_error = f"non_paid_status:{normalized.status}"
+            await uow.session.commit()
+            return {"status": f"ignored_status_{normalized.status}"}
+
         # 4. DOMAIN STEP: MARK PAID
         paid_uc = MarkInvoicePaidUseCase(uow)
         ok = await paid_uc.execute(

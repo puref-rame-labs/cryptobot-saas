@@ -29,11 +29,13 @@ class BTCPayProvider(BasePaymentProvider):
 
         if network == "mainnet":
             host = settings.BTCPAY_MAINNET_HOST
+            self._public_host = settings.BTCPAY_MAINNET_PUBLIC_HOST or host
             self._api_key = settings.BTCPAY_MAINNET_API_KEY
             self._store_id = settings.BTCPAY_MAINNET_STORE_ID
             self._webhook_secret = settings.BTCPAY_MAINNET_WEBHOOK_SECRET
         elif network == "testnet":
             host = settings.BTCPAY_TESTNET_HOST
+            self._public_host = settings.BTCPAY_TESTNET_PUBLIC_HOST or host
             self._api_key = settings.BTCPAY_TESTNET_API_KEY
             self._store_id = settings.BTCPAY_TESTNET_STORE_ID
             self._webhook_secret = settings.BTCPAY_TESTNET_WEBHOOK_SECRET
@@ -66,7 +68,7 @@ class BTCPayProvider(BasePaymentProvider):
 
         return type("BTCPayInvoiceResponse", (), {
             "external_id": data["id"],
-            "payment_url": data["checkoutLink"],
+            "payment_url": f"{self._public_host.rstrip('/')}/i/{data['id']}",
         })()
 
     async def verify_signature(
