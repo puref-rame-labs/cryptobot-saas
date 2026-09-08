@@ -68,3 +68,13 @@ def brands_kb(brands, back_callback=None):
     return InlineKeyboardMarkup(
         inline_keyboard=_with_nav(buttons, back_callback)
     )
+
+
+def hierarchy_level_kb():
+    buttons = [
+        [InlineKeyboardButton(text="Категория", callback_data="level:category")],
+        [InlineKeyboardButton(text="Подкатегория", callback_data="level:subcategory")],
+        [InlineKeyboardButton(text="Группа товаров", callback_data="level:product_group")],
+        [InlineKeyboardButton(text="Бренд", callback_data="level:brand")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=_with_nav(buttons))

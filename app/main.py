@@ -23,6 +23,7 @@ from app.handlers.help import router as help_router
 from app.handlers.unknown import router as unknown_router
 from app.handlers.publish import router as publish_router
 from app.handlers.archive import router as archive_router
+from app.handlers.hierarchy_admin import router as hierarchy_admin_router
 from app.handlers.referral_stats import router as referral_stats_router
 from app.handlers.referral_payouts import router as referral_payouts_router
 from app.handlers.refund import router as refund_router
@@ -55,6 +56,7 @@ async def main():
     dp.include_router(help_router)
     dp.include_router(publish_router)
     dp.include_router(archive_router)
+    dp.include_router(hierarchy_admin_router)
     dp.include_router(referral_stats_router)
     dp.include_router(referral_payouts_router)
     dp.include_router(refund_router)
@@ -83,6 +85,12 @@ async def main():
                 BotCommand(command="testmode", description="Переключить testnet"),
                 BotCommand(command="referral_payouts", description="Реферальные выплаты"),
                 BotCommand(command="refund", description="Вернуть оплату по инвойсу"),
+                BotCommand(command="addhierarchy", description="Добавить узел иерархии"),
+                BotCommand(command="listhierarchy", description="Показать иерархию с ID"),
+                BotCommand(command="delcategory", description="Удалить категорию"),
+                BotCommand(command="delsubcategory", description="Удалить подкатегорию"),
+                BotCommand(command="delproductgroup", description="Удалить группу товаров"),
+                BotCommand(command="delbrand", description="Удалить бренд"),
             ],
             scope=BotCommandScopeChat(chat_id=admin_id),
         )
